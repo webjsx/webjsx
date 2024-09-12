@@ -1,27 +1,19 @@
-/**
- * Creates everything needed to run webjsx, wrapped in a closure holding e.g.,
- * JSDOM-specific environment overrides used in tests
- */
-
-// Cache for storing custom elements, so we don't redefine them
-type Props = { [key: string]: any }; // Props can be any key-value pairs.
-type WebJsxElement = HTMLElement | Text; // A WebJsx element is either an HTML element or text.
-type ChildElement = WebJsxElement | Array<WebJsxElement> | string | number; // Children can be elements or simple text.
+// Type definitions for props, elements, and components
+type Props = { [key: string]: any };
+type WebJsxElement = HTMLElement | Text;
+type ChildElement = WebJsxElement | Array<WebJsxElement> | string | number;
 
 type WebJsxComponentType = {
   name: string;
   render: (props: Props, component: WebJsxComponentType) => WebJsxElement;
-  element?: HTMLElement; // Optional element property to store the custom element reference
-  update: () => void; // Update method to re-render the component
-  props?: Props; // Store optional props
-  attachShadow: boolean; // Whether to attach a shadow root
-  shadowRootMode: "open" | "closed"; // Shadow DOM mode (open or closed)
+  element?: HTMLElement;
+  update: () => void;
+  props?: Props;
+  attachShadow: boolean;
+  shadowRootMode: "open" | "closed";
 };
 
-/*
-  The following adds support for injecting test environment objects.
-  Such as JSDOM.
-*/
+// Environment type for WebJSX
 export type WebJsxEnvType = {
   window: Window;
   document: Document;
@@ -31,38 +23,37 @@ export type WebJsxEnvType = {
   };
 };
 
-// The Component class
+// Component class for creating custom elements
 export class Component {
   name: string;
   render: (props: Props, component: Component) => WebJsxElement;
-  element?: HTMLElement; // Store the associated custom element
-  props: Props; // Store the props passed to the component
-  attachShadow: boolean; // Whether to attach a shadow root
-  shadowRootMode: "open" | "closed"; // The mode for the shadow root
+  element?: HTMLElement;
+  props: Props;
+  attachShadow: boolean;
+  shadowRootMode: "open" | "closed";
 
   constructor(config: {
     name: string;
     render: (props: Props, component: Component) => WebJsxElement;
     props?: Props;
-    attachShadow?: boolean; // Add this option, defaults to true
-    shadowRootMode?: "open" | "closed"; // Add this option, defaults to "open"
+    attachShadow?: boolean;
+    shadowRootMode?: "open" | "closed";
   }) {
     this.name = config.name;
     this.render = config.render;
-    this.element = undefined; // Initialize the element as undefined
-    this.props = config.props ?? {}; // Store the props passed to the component
-    this.attachShadow = config.attachShadow ?? true; // Default attachShadow to true
-    this.shadowRootMode = config.shadowRootMode ?? "open"; // Default mode to "open"
+    this.element = undefined;
+    this.props = config.props ?? {};
+    this.attachShadow = config.attachShadow ?? true;
+    this.shadowRootMode = config.shadowRootMode ?? "open";
   }
 
-  // The update method to re-render the component and update the DOM
+  // Method to update the component's DOM
   update() {
     if (this.element) {
-      // Determine whether to target the shadow DOM or the regular element based on the attachShadow prop
       const target = this.attachShadow ? this.element.shadowRoot : this.element;
 
       if (target) {
-        // Clear the target's existing content
+        // Clear existing content
         while (target.firstChild) {
           target.removeChild(target.firstChild);
         }
@@ -75,53 +66,49 @@ export class Component {
   }
 }
 
-// Cache for storing custom elements, so we don't redefine them
+// Registry to keep track of defined custom elements
 const customElementRegistry: { [key: string]: boolean } = {};
 
-/**
- * Creates everything needed to run WebJsx, wrapped in a closure holding e.g.,
- * JSDOM-specific environment overrides used in tests
- */
+// Main function to create a WebJSX instance
 export function createWebJsxInstance(customEnv: any) {
   const env: WebJsxEnvType = customEnv;
 
+  // Set up internal references to HTMLElement and Text
   env.__internal = env.__internal ?? {
     Text: (env.window as any).Text,
     HTMLElement: (env.window as any).HTMLElement,
   };
 
-  // The createElement function
+  // Function to create DOM elements or custom components
   function createElement(
     tag: keyof HTMLElementTagNameMap | ((props: any) => WebJsxComponentType),
     props: Props | null,
     ...children: ChildElement[]
   ): WebJsxElement {
     if (typeof tag === "function") {
+      // Handle custom component
       const webjsxComponent = tag(props);
 
-      // Check if the custom element has already been registered
+      // Register custom element if not already registered
       if (!customElementRegistry[webjsxComponent.name]) {
-        // Create a custom element class, but without rendering in connectedCallback
         class CustomElement extends env.__internal.HTMLElement {}
-
-        // Define the custom element using the component's name
         env.window.customElements.define(webjsxComponent.name, CustomElement);
         customElementRegistry[webjsxComponent.name] = true;
       }
 
-      // Create the custom element (i.e., <basic-component> or <parent-component>)
       const customElement = env.document.createElement(webjsxComponent.name);
 
-      // Conditionally attach a shadow root based on attachShadow property
+      // Set up shadow DOM if needed
       let shadowRoot;
       if (webjsxComponent.attachShadow) {
-        shadowRoot = customElement.attachShadow({ mode: webjsxComponent.shadowRootMode });
+        shadowRoot = customElement.attachShadow({
+          mode: webjsxComponent.shadowRootMode,
+        });
       }
 
-      // Attach the custom element to the component's `element` prop
       webjsxComponent.element = customElement;
 
-      // Set the props as attributes on the custom element
+      // Set attributes and handle ref
       if (props) {
         if (props.ref !== undefined) {
           props.ref.value = customElement;
@@ -132,13 +119,13 @@ export function createWebJsxInstance(customEnv: any) {
         }
       }
 
-      // Render the component's content, passing props and the component to the render function
+      // Render component content
       const renderedContent = webjsxComponent.render(
         props || {},
         webjsxComponent
       );
 
-      // Append the rendered content to the shadow root if it exists, otherwise to the element
+      // Append content to shadow root or element
       if (shadowRoot) {
         shadowRoot.appendChild(renderedContent);
       } else {
@@ -148,10 +135,10 @@ export function createWebJsxInstance(customEnv: any) {
       return customElement;
     }
 
-    // For standard HTML elements, no shadow root is created
+    // Handle standard HTML elements
     const element = env.document.createElement(tag);
 
-    // Set properties or attributes if provided
+    // Set properties or attributes
     if (props) {
       if (props.ref !== undefined) {
         props.ref.value = element;
@@ -159,24 +146,23 @@ export function createWebJsxInstance(customEnv: any) {
 
       for (const [key, value] of Object.entries(props)) {
         if (key in element) {
-          (element as any)[key] = value; // Set DOM properties
+          (element as any)[key] = value;
         } else {
-          element.setAttribute(key, String(value)); // Set as an attribute
+          element.setAttribute(key, String(value));
         }
       }
     }
 
-    // Append children, which could be either text, numbers, or other elements
+    // Append children
     children.forEach((child) => {
       if (typeof child === "string" || typeof child === "number") {
-        element.appendChild(env.document.createTextNode(String(child))); // Append text nodes
+        element.appendChild(env.document.createTextNode(String(child)));
       } else if (
         child instanceof env.__internal.HTMLElement ||
         child instanceof env.__internal.Text
       ) {
-        element.appendChild(child); // Append child elements
+        element.appendChild(child);
       } else if (Array.isArray(child)) {
-        // Handle case where children might be an array (for JSX scenarios with multiple children)
         child.forEach((nestedChild) => {
           if (
             typeof nestedChild === "string" ||
@@ -198,12 +184,11 @@ export function createWebJsxInstance(customEnv: any) {
     return element;
   }
 
-  // The mount function that can take either an HTMLElement or a string selector
+  // Function to mount a component to the DOM
   function mount(
     component: WebJsxElement,
     container: HTMLElement | string | null
   ) {
-    // If the container is a string, use document.querySelector to find the DOM element
     const root =
       typeof container === "string"
         ? env.document.querySelector(container)
@@ -213,12 +198,12 @@ export function createWebJsxInstance(customEnv: any) {
       throw new Error("Root element not found.");
     }
 
-    // Clear the root element before mounting
+    // Clear existing content
     while (root.firstChild) {
       root.removeChild(root.firstChild);
     }
 
-    // Append the component's rendered DOM element to the root
+    // Append the component
     root.appendChild(component);
   }
 
@@ -228,17 +213,21 @@ export function createWebJsxInstance(customEnv: any) {
   };
 }
 
+// Determine the global object (window or globalThis)
 const windowObject = globalThis !== undefined ? globalThis : window;
 
+// Create initial WebJSX instance
 let webjsxInstance = createWebJsxInstance({
   window: windowObject,
   document: windowObject.document,
 });
 
+// Function to set a custom environment
 export function setCustomEnv(customEnv: any) {
   webjsxInstance = createWebJsxInstance(customEnv);
 }
 
+// Export mount function
 export function mount(
   component: WebJsxElement,
   container: HTMLElement | string | null
@@ -246,6 +235,7 @@ export function mount(
   return webjsxInstance.mount(component, container);
 }
 
+// Export createElement function
 export function createElement(
   tag: keyof HTMLElementTagNameMap | (() => WebJsxComponentType),
   props: Props | null,
