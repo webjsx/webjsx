@@ -1,6 +1,6 @@
 {
-  "name": "forgo-next",
-  "version": "0.0.6",
+  "name": "webjsx",
+  "version": "0.0.1",
   "main": "./dist/index.js",
   "type": "module",
   "author": "Jeswin Kumar<jeswinpk@agilehead.com>",
