@@ -1,16 +1,10 @@
 // Type definitions for props, elements, and components
-type Props = { [key: string]: any };
+
 type WebJsxElement = HTMLElement | Text;
 type ChildElement = WebJsxElement | Array<WebJsxElement> | string | number;
 
-type WebJsxComponentType = {
-  name: string;
-  render: (props: Props, component: WebJsxComponentType) => WebJsxElement;
-  element?: HTMLElement;
-  update: () => void;
-  props?: Props;
-  attachShadow: boolean;
-  shadowRootMode: "open" | "closed";
+type MountedElement = HTMLElement & {
+  __webjsxComponent: Component<any>;
 };
 
 // Environment type for WebJSX
@@ -24,27 +18,30 @@ export type WebJsxEnvType = {
 };
 
 // Component class for creating custom elements
-export class Component {
+export class Component<TProps extends Record<string, any>> {
   name: string;
-  render: (props: Props, component: Component) => WebJsxElement;
+  render: (props: TProps, component: Component<TProps>) => WebJsxElement;
   element?: HTMLElement;
-  props: Props;
+  props: TProps | undefined;
   attachShadow: boolean;
   shadowRootMode: "open" | "closed";
 
   constructor(config: {
     name: string;
-    render: (props: Props, component: Component) => WebJsxElement;
-    props?: Props;
+    render: (props: TProps, component: Component<TProps>) => WebJsxElement;
     attachShadow?: boolean;
     shadowRootMode?: "open" | "closed";
   }) {
     this.name = config.name;
     this.render = config.render;
     this.element = undefined;
-    this.props = config.props ?? {};
     this.attachShadow = config.attachShadow ?? true;
     this.shadowRootMode = config.shadowRootMode ?? "open";
+    this.props = undefined;
+  }
+
+  setProps(props: TProps) {
+    this.props = props;
   }
 
   // Method to update the component's DOM
@@ -59,7 +56,7 @@ export class Component {
         }
 
         // Re-render and append new content
-        const newContent = this.render(this.props, this);
+        const newContent = this.render(this.props!, this);
         target.appendChild(newContent);
       }
     }
@@ -80,9 +77,11 @@ export function createWebJsxInstance(customEnv: any) {
   };
 
   // Function to create DOM elements or custom components
-  function createElement(
-    tag: keyof HTMLElementTagNameMap | ((props: any) => WebJsxComponentType),
-    props: Props | null,
+  function createElement<TProps extends Record<string, any>>(
+    tag:
+      | keyof HTMLElementTagNameMap
+      | ((props: TProps | null) => Component<TProps>),
+    props: TProps,
     ...children: ChildElement[]
   ): WebJsxElement {
     if (typeof tag === "function") {
@@ -110,9 +109,7 @@ export function createWebJsxInstance(customEnv: any) {
       webjsxComponent.element = customElement;
 
       // Reverse attach component in customElement
-      (
-        customElement as unknown as { __webjsxComponent: WebJsxComponentType }
-      ).__webjsxComponent = webjsxComponent;
+      (customElement as MountedElement).__webjsxComponent = webjsxComponent;
 
       // Set attributes and handle ref
       if (props) {
@@ -126,10 +123,8 @@ export function createWebJsxInstance(customEnv: any) {
       }
 
       // Render component content
-      const renderedContent = webjsxComponent.render(
-        props || {},
-        webjsxComponent
-      );
+      webjsxComponent.setProps(props);
+      const renderedContent = webjsxComponent.render(props, webjsxComponent);
 
       // Append content to shadow root or element
       if (shadowRoot) {
@@ -242,12 +237,35 @@ export function mount(
 }
 
 // Export createElement function
-export function createElement(
-  tag: keyof HTMLElementTagNameMap | (() => WebJsxComponentType),
-  props: Props | null,
+export function createElement<TProps extends Record<string, any>>(
+  tag:
+    | keyof HTMLElementTagNameMap
+    | ((props: TProps | null) => Component<TProps>),
+  props: TProps,
   ...children: ChildElement[]
 ) {
   return webjsxInstance.createElement(tag, props, ...children);
+}
+
+export function getComponent(element: HTMLElement): Component<any> {
+  return isMountedElement(element)
+    ? element.__webjsxComponent
+    : exception(
+        `${
+          element.getAttribute("id") ?? element.id ?? element.tagName
+        } has no mounted component.`
+      );
+}
+
+function exception(message: string): never {
+  throw new Error(message);
+}
+
+function isMountedElement(element: HTMLElement): element is MountedElement {
+  return (
+    (element as unknown as { __webjsxComponent: Component<any> })
+      .__webjsxComponent !== undefined
+  );
 }
 
 /* JSX Types */

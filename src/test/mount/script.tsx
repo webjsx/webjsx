@@ -4,11 +4,13 @@ import { DOMWindow, JSDOM } from "jsdom";
 let window: DOMWindow;
 let document: Document;
 
-const BasicComponent = () => {
-  return new webjsx.Component({
+type BasicComponentProps = { greeting: string };
+
+const BasicComponent = (props: BasicComponentProps) => {
+  return new webjsx.Component<BasicComponentProps>({
     name: "basic-component",
-    render() {
-      return <div>Hello world</div>;
+    render(props, component) {
+      return <div>{props.greeting}</div>;
     },
   });
 };
@@ -19,6 +21,6 @@ export function run(dom: JSDOM) {
   webjsx.setCustomEnv({ window, document });
 
   window.addEventListener("load", () => {
-    webjsx.mount(<BasicComponent />, "#root");
+    webjsx.mount(<BasicComponent greeting="Hello, world" />, "#root");
   });
 }

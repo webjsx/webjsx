@@ -30,7 +30,7 @@ export default function () {
         });
       });
 
-      innerHtml.should.containEql("Hello world");
+      innerHtml.should.containEql("Hello, world");
     });
   });
 }
