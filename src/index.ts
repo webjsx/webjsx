@@ -158,8 +158,8 @@ export function createWebJsxInstance(customEnv: any) {
       }
     }
 
-    // Append children
-    children.forEach((child) => {
+    // Recursively append children, which could be text, numbers, elements, or nested arrays
+    function appendChildRecursive(child: ChildElement | ChildElement[]) {
       if (typeof child === "string" || typeof child === "number") {
         element.appendChild(env.document.createTextNode(String(child)));
       } else if (
@@ -168,23 +168,12 @@ export function createWebJsxInstance(customEnv: any) {
       ) {
         element.appendChild(child);
       } else if (Array.isArray(child)) {
-        child.forEach((nestedChild) => {
-          if (
-            typeof nestedChild === "string" ||
-            typeof nestedChild === "number"
-          ) {
-            element.appendChild(
-              env.document.createTextNode(String(nestedChild))
-            );
-          } else if (
-            nestedChild instanceof env.__internal.HTMLElement ||
-            nestedChild instanceof env.__internal.Text
-          ) {
-            element.appendChild(nestedChild);
-          }
-        });
+        child.forEach((nestedChild) => appendChildRecursive(nestedChild));
       }
-    });
+    }
+
+    // Iterate over the children and handle them (could be nested arrays)
+    children.forEach((child) => appendChildRecursive(child));
 
     return element;
   }
