@@ -245,7 +245,9 @@ export function getComponent(element: HTMLElement): Component<any> {
     ? element.__webjsxComponent
     : exception(
         `${
-          element.getAttribute("id") ?? element.id ?? element.tagName
+          `${element.tagName}#${element.getAttribute("id")}` ??
+          `${element.tagName}#${element.id}` ??
+          element.tagName
         } has no mounted component.`
       );
 }
