@@ -106,7 +106,13 @@ export function createWebJsxInstance(customEnv: any) {
         });
       }
 
+      // Attach element to webjsxComponent
       webjsxComponent.element = customElement;
+
+      // Reverse attach component in customElement
+      (
+        customElement as unknown as { __webjsxComponent: WebJsxComponentType }
+      ).__webjsxComponent = webjsxComponent;
 
       // Set attributes and handle ref
       if (props) {
