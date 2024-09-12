@@ -565,7 +565,7 @@ export interface DOMAttributes<Target extends EventTarget> {
 }
 
 export interface HTMLAttributes<RefType extends EventTarget = EventTarget>
-  // extends ForgoClassAttributes<RefType>,
+  // extends WebJsxClassAttributes<RefType>,
   extends DOMAttributes<RefType> {
   [key: string]: any;
   // Standard HTML Attributes

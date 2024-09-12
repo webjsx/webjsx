@@ -1,11 +1,11 @@
-import * as forgo from "../../index.js";
+import * as webjsx from "../../index.js";
 import { DOMWindow, JSDOM } from "jsdom";
 
 let window: DOMWindow;
 let document: Document;
 
 const ChildComponent = () => {
-  return new forgo.Component({
+  return new webjsx.Component({
     name: "basic-component",
     render() {
       return <div>Hello world</div>;
@@ -14,7 +14,7 @@ const ChildComponent = () => {
 };
 
 const ParentComponent = () => {
-  return new forgo.Component({
+  return new webjsx.Component({
     name: "parent-component",
     render() {
       return <ChildComponent />;
@@ -25,9 +25,9 @@ const ParentComponent = () => {
 export function run(dom: JSDOM) {
   window = dom.window;
   document = window.document;
-  forgo.setCustomEnv({ window, document });
+  webjsx.setCustomEnv({ window, document });
 
   window.addEventListener("load", () => {
-    forgo.mount(<ParentComponent />, "#root");
+    webjsx.mount(<ParentComponent />, "#root");
   });
 }

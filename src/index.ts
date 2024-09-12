@@ -1,16 +1,16 @@
 /**
- * Creates everything needed to run forgo, wrapped in a closure holding e.g.,
+ * Creates everything needed to run webjsx, wrapped in a closure holding e.g.,
  * JSDOM-specific environment overrides used in tests
  */
 
 // Cache for storing custom elements, so we don't redefine them
 type Props = { [key: string]: any }; // Props can be any key-value pairs.
-type ForgoElement = HTMLElement | Text; // A Forgo element is either an HTML element or text.
-type ChildElement = ForgoElement | Array<ForgoElement> | string | number; // Children can be elements or simple text.
+type WebJsxElement = HTMLElement | Text; // A WebJsx element is either an HTML element or text.
+type ChildElement = WebJsxElement | Array<WebJsxElement> | string | number; // Children can be elements or simple text.
 
-type ForgoComponentType = {
+type WebJsxComponentType = {
   name: string;
-  render: (props: Props, component: ForgoComponentType) => ForgoElement;
+  render: (props: Props, component: WebJsxComponentType) => WebJsxElement;
   element?: HTMLElement; // Optional element property to store the custom element reference
   update: () => void; // Update method to re-render the component
   props?: Props; // Store optional props
@@ -22,7 +22,7 @@ type ForgoComponentType = {
   The following adds support for injecting test environment objects.
   Such as JSDOM.
 */
-export type ForgoEnvType = {
+export type WebJsxEnvType = {
   window: Window;
   document: Document;
   __internal: {
@@ -34,7 +34,7 @@ export type ForgoEnvType = {
 // The Component class
 export class Component {
   name: string;
-  render: (props: Props, component: Component) => ForgoElement;
+  render: (props: Props, component: Component) => WebJsxElement;
   element?: HTMLElement; // Store the associated custom element
   props: Props; // Store the props passed to the component
   attachShadow: boolean; // Whether to attach a shadow root
@@ -42,7 +42,7 @@ export class Component {
 
   constructor(config: {
     name: string;
-    render: (props: Props, component: Component) => ForgoElement;
+    render: (props: Props, component: Component) => WebJsxElement;
     props?: Props;
     attachShadow?: boolean; // Add this option, defaults to true
     shadowRootMode?: "open" | "closed"; // Add this option, defaults to "open"
@@ -79,11 +79,11 @@ export class Component {
 const customElementRegistry: { [key: string]: boolean } = {};
 
 /**
- * Creates everything needed to run forgo, wrapped in a closure holding e.g.,
+ * Creates everything needed to run WebJsx, wrapped in a closure holding e.g.,
  * JSDOM-specific environment overrides used in tests
  */
-export function createForgoInstance(customEnv: any) {
-  const env: ForgoEnvType = customEnv;
+export function createWebJsxInstance(customEnv: any) {
+  const env: WebJsxEnvType = customEnv;
 
   env.__internal = env.__internal ?? {
     Text: (env.window as any).Text,
@@ -92,34 +92,34 @@ export function createForgoInstance(customEnv: any) {
 
   // The createElement function
   function createElement(
-    tag: keyof HTMLElementTagNameMap | ((props: any) => ForgoComponentType),
+    tag: keyof HTMLElementTagNameMap | ((props: any) => WebJsxComponentType),
     props: Props | null,
     ...children: ChildElement[]
-  ): ForgoElement {
+  ): WebJsxElement {
     if (typeof tag === "function") {
-      const forgoComponent = tag(props);
+      const webjsxComponent = tag(props);
 
       // Check if the custom element has already been registered
-      if (!customElementRegistry[forgoComponent.name]) {
+      if (!customElementRegistry[webjsxComponent.name]) {
         // Create a custom element class, but without rendering in connectedCallback
         class CustomElement extends env.__internal.HTMLElement {}
 
         // Define the custom element using the component's name
-        env.window.customElements.define(forgoComponent.name, CustomElement);
-        customElementRegistry[forgoComponent.name] = true;
+        env.window.customElements.define(webjsxComponent.name, CustomElement);
+        customElementRegistry[webjsxComponent.name] = true;
       }
 
       // Create the custom element (i.e., <basic-component> or <parent-component>)
-      const customElement = env.document.createElement(forgoComponent.name);
+      const customElement = env.document.createElement(webjsxComponent.name);
 
       // Conditionally attach a shadow root based on attachShadow property
       let shadowRoot;
-      if (forgoComponent.attachShadow) {
-        shadowRoot = customElement.attachShadow({ mode: forgoComponent.shadowRootMode });
+      if (webjsxComponent.attachShadow) {
+        shadowRoot = customElement.attachShadow({ mode: webjsxComponent.shadowRootMode });
       }
 
       // Attach the custom element to the component's `element` prop
-      forgoComponent.element = customElement;
+      webjsxComponent.element = customElement;
 
       // Set the props as attributes on the custom element
       if (props) {
@@ -133,9 +133,9 @@ export function createForgoInstance(customEnv: any) {
       }
 
       // Render the component's content, passing props and the component to the render function
-      const renderedContent = forgoComponent.render(
+      const renderedContent = webjsxComponent.render(
         props || {},
-        forgoComponent
+        webjsxComponent
       );
 
       // Append the rendered content to the shadow root if it exists, otherwise to the element
@@ -200,7 +200,7 @@ export function createForgoInstance(customEnv: any) {
 
   // The mount function that can take either an HTMLElement or a string selector
   function mount(
-    component: ForgoElement,
+    component: WebJsxElement,
     container: HTMLElement | string | null
   ) {
     // If the container is a string, use document.querySelector to find the DOM element
@@ -230,34 +230,34 @@ export function createForgoInstance(customEnv: any) {
 
 const windowObject = globalThis !== undefined ? globalThis : window;
 
-let forgoInstance = createForgoInstance({
+let webjsxInstance = createWebJsxInstance({
   window: windowObject,
   document: windowObject.document,
 });
 
 export function setCustomEnv(customEnv: any) {
-  forgoInstance = createForgoInstance(customEnv);
+  webjsxInstance = createWebJsxInstance(customEnv);
 }
 
 export function mount(
-  component: ForgoElement,
+  component: WebJsxElement,
   container: HTMLElement | string | null
 ) {
-  return forgoInstance.mount(component, container);
+  return webjsxInstance.mount(component, container);
 }
 
 export function createElement(
-  tag: keyof HTMLElementTagNameMap | (() => ForgoComponentType),
+  tag: keyof HTMLElementTagNameMap | (() => WebJsxComponentType),
   props: Props | null,
   ...children: ChildElement[]
 ) {
-  return forgoInstance.createElement(tag, props, ...children);
+  return webjsxInstance.createElement(tag, props, ...children);
 }
 
 /* JSX Types */
 /*
-  JSX typings expect a JSX namespace to be in scope for the forgo module (if a
-  using a jsxFactory like forgo.createElement), or attached to the naked factory
+  JSX typings expect a JSX namespace to be in scope for the webjsx module (if a
+  using a jsxFactory like webjsx.createElement), or attached to the naked factory
   function (if using a jsxFactory like createElement).
 
   See: https://www.typescriptlang.org/docs/handbook/jsx.html#intrinsic-elements
@@ -269,9 +269,9 @@ export function createElement(
   However, attempting to declare it that way causes no end of headaches either
   when trying to reexport it here, or reexport it from a createElement
   namespace. Some errors arise at comple or build time, and some are only
-  visible when a project attempts to consume forgo.
+  visible when a project attempts to consume webjsx.
 */
-// This covers a consuming project using the forgo.createElement jsxFactory
+// This covers a consuming project using the webjsx.createElement jsxFactory
 export * as JSX from "./jsxTypes.js";
 
 // If jsxTypes is imported using named imports, esbuild doesn't know how to
@@ -281,7 +281,7 @@ export * as JSX from "./jsxTypes.js";
 // within a namespace without using import aliases.
 import * as JSXTypes from "./jsxTypes.js";
 // The createElement namespace exists so that users can set their TypeScript
-// jsxFactory to createElement instead of forgo.createElement.// eslint-disable-next-line @typescript-eslint/no-namespace
+// jsxFactory to createElement instead of webjsx.createElement.// eslint-disable-next-line @typescript-eslint/no-namespace
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 export namespace createElement {

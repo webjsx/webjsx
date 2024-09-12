@@ -1,4 +1,4 @@
-import * as forgo from "../../index.js";
+import * as webjsx from "../../index.js";
 import { DOMWindow, JSDOM } from "jsdom";
 
 let window: DOMWindow;
@@ -9,7 +9,7 @@ export const counterButtonRef: any = {};
 const CounterComponent = () => {
   let counter = 0;
 
-  return new forgo.Component({
+  return new webjsx.Component({
     name: "counter-component",
     render(props, component) {
       function inc() {
@@ -32,9 +32,9 @@ const CounterComponent = () => {
 export function run(dom: JSDOM) {
   window = dom.window;
   document = window.document;
-  forgo.setCustomEnv({ window, document });
+  webjsx.setCustomEnv({ window, document });
 
   window.addEventListener("load", () => {
-    forgo.mount(<CounterComponent />, "#root");
+    webjsx.mount(<CounterComponent />, "#root");
   });
 }
