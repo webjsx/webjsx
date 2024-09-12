@@ -1,21 +1,18 @@
 {
   "name": "forgo-next",
-  "version": "0.0.1",
-  "main": "./dist/forgo.min.js",
+  "version": "0.0.4",
+  "main": "./dist/index.js",
   "type": "module",
   "author": "Jeswin Kumar<jeswinpk@agilehead.com>",
   "repository": {
     "type": "git",
     "url": "https://github.com/forgojs/forgo"
   },
-  "exports": "./dist/forgo.min.js",
-  "types": "./dist/index.d.ts",
   "devDependencies": {
     "@types/jsdom": "^21.1.7",
     "@types/mocha": "^10.0.7",
     "@types/should": "^13.0.0",
     "@types/source-map-support": "^0.5.10",
-    "esbuild": "^0.23.1",
     "eslint": "^9.10.0",
     "jsdom": "^25.0.0",
     "mocha": "^10.7.3",
@@ -26,7 +23,7 @@
   },
   "scripts": {
     "clean": "rimraf ./dist",
-    "build": "npm run clean && npx tsc --emitDeclarationOnly && npx esbuild ./src/index.ts --minify --bundle --format=esm --sourcemap --target=es2015 --outfile=dist/forgo.min.js",
+    "build": "npm run clean && npx tsc",
     "build-dev": "npx tsc",
     "test": "npx tsc && npx mocha dist/test/test.js"
   },

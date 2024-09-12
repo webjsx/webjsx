@@ -2,22 +2,16 @@
   "compilerOptions": {
     "outDir": "./dist",
     "allowJs": false,
-    "target": "ES2015",
-    "module": "ESNext",
-    "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
+    "target": "ES2021",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "lib": ["ES2020", "DOM"],
     "sourceMap": true,
     "strict": true,
     "jsx": "react",
     "jsxFactory": "forgo.createElement",
     "jsxFragmentFactory": "forgo.Fragment",
-    "declaration": true,
-    // esbuild recommends enabling this to help enforce throwing errors in
-    // scenarios where esbuild and tsc's behavior would differ
-    //
-    // https://esbuild.github.io/content-types/#isolated-modules
-    "isolatedModules": true
+    "declaration": true
   },
   "include": ["./src/**/*"]
 }
