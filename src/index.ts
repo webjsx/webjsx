@@ -45,7 +45,11 @@ export class Component<TProps extends Record<string, any>> {
   }
 
   // Method to update the component's DOM
-  update() {
+  update(newProps?: TProps) {
+    if (newProps !== undefined) {
+      this.setProps(newProps);
+    }
+
     if (this.element) {
       const target = this.attachShadow ? this.element.shadowRoot : this.element;
 
@@ -56,7 +60,7 @@ export class Component<TProps extends Record<string, any>> {
         }
 
         // Re-render and append new content
-        const newContent = this.render(this.props!, this);
+        const newContent = this.render(this.props as TProps, this);
         target.appendChild(newContent);
       }
     }
