@@ -6,7 +6,7 @@
 // Cache for storing custom elements, so we don't redefine them
 type Props = { [key: string]: any }; // Props can be any key-value pairs.
 type ForgoElement = HTMLElement | Text; // A Forgo element is either an HTML element or text.
-type ChildElement = ForgoElement | string | number; // Children can be elements or simple text.
+type ChildElement = ForgoElement | Array<ForgoElement> | string | number; // Children can be elements or simple text.
 
 type ForgoComponentType = {
   name: string;
@@ -15,7 +15,7 @@ type ForgoComponentType = {
   update: () => void; // Update method to re-render the component
   props?: Props; // Store optional props
   attachShadow: boolean; // Whether to attach a shadow root
-  mode: "open" | "closed"; // Shadow DOM mode (open or closed)
+  shadowRootMode: "open" | "closed"; // Shadow DOM mode (open or closed)
 };
 
 /*
@@ -38,21 +38,21 @@ export class Component {
   element?: HTMLElement; // Store the associated custom element
   props: Props; // Store the props passed to the component
   attachShadow: boolean; // Whether to attach a shadow root
-  mode: "open" | "closed"; // The mode for the shadow root
+  shadowRootMode: "open" | "closed"; // The mode for the shadow root
 
   constructor(config: {
     name: string;
     render: (props: Props, component: Component) => ForgoElement;
     props?: Props;
     attachShadow?: boolean; // Add this option, defaults to true
-    mode?: "open" | "closed"; // Add this option, defaults to "open"
+    shadowRootMode?: "open" | "closed"; // Add this option, defaults to "open"
   }) {
     this.name = config.name;
     this.render = config.render;
     this.element = undefined; // Initialize the element as undefined
     this.props = config.props ?? {}; // Store the props passed to the component
     this.attachShadow = config.attachShadow ?? true; // Default attachShadow to true
-    this.mode = config.mode ?? "open"; // Default mode to "open"
+    this.shadowRootMode = config.shadowRootMode ?? "open"; // Default mode to "open"
   }
 
   // The update method to re-render the component and update the DOM
@@ -92,12 +92,12 @@ export function createForgoInstance(customEnv: any) {
 
   // The createElement function
   function createElement(
-    tag: keyof HTMLElementTagNameMap | (() => ForgoComponentType),
+    tag: keyof HTMLElementTagNameMap | ((props: any) => ForgoComponentType),
     props: Props | null,
     ...children: ChildElement[]
   ): ForgoElement {
     if (typeof tag === "function") {
-      const forgoComponent = tag();
+      const forgoComponent = tag(props);
 
       // Check if the custom element has already been registered
       if (!customElementRegistry[forgoComponent.name]) {
@@ -115,7 +115,7 @@ export function createForgoInstance(customEnv: any) {
       // Conditionally attach a shadow root based on attachShadow property
       let shadowRoot;
       if (forgoComponent.attachShadow) {
-        shadowRoot = customElement.attachShadow({ mode: forgoComponent.mode });
+        shadowRoot = customElement.attachShadow({ mode: forgoComponent.shadowRootMode });
       }
 
       // Attach the custom element to the component's `element` prop
@@ -175,6 +175,23 @@ export function createForgoInstance(customEnv: any) {
         child instanceof env.__internal.Text
       ) {
         element.appendChild(child); // Append child elements
+      } else if (Array.isArray(child)) {
+        // Handle case where children might be an array (for JSX scenarios with multiple children)
+        child.forEach((nestedChild) => {
+          if (
+            typeof nestedChild === "string" ||
+            typeof nestedChild === "number"
+          ) {
+            element.appendChild(
+              env.document.createTextNode(String(nestedChild))
+            );
+          } else if (
+            nestedChild instanceof env.__internal.HTMLElement ||
+            nestedChild instanceof env.__internal.Text
+          ) {
+            element.appendChild(nestedChild);
+          }
+        });
       }
     });
 
