@@ -1,0 +1,3 @@
+.vscode
+dist/test/*
+src/test/*
