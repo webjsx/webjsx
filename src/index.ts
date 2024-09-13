@@ -11,6 +11,8 @@ import { exception } from "./exception.js";
 // Type definitions for props, elements, and components
 export type BasicPrimitive = string | number | boolean | bigint;
 
+export type Ref<T> = { value?: T };
+
 export type RenderedNode =
   | VirtualComponent
   | VirtualElement
@@ -222,7 +224,7 @@ export function createWebJsxInstance(customEnv: any) {
       (shadowRoot ?? parent).appendChild(customElement);
 
       child.component.element = customElement;
-      
+
       attachProps(customElement, child.props);
       const contents = child.component.render(child.props, child.component);
 
