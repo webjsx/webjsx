@@ -56,3 +56,31 @@ export function runChildArray(dom: JSDOM) {
     webjsx.mount(<ParentComponentWithChildArray />, "#root");
   });
 }
+
+const ParentComponentWithChildArrayNested = () => {
+  return new webjsx.Component({
+    name: "parent-component",
+    render() {
+      return (
+        <>
+          <ChildComponent />
+          <ChildComponent />
+          <div>
+            <ChildComponent />
+            <ChildComponent />
+          </div>          
+        </>
+      );
+    },
+  });
+};
+
+export function runChildArrayNested(dom: JSDOM) {
+  window = dom.window;
+  document = window.document;
+  webjsx.setCustomEnv({ window, document });
+
+  window.addEventListener("load", () => {
+    webjsx.mount(<ParentComponentWithChildArrayNested />, "#root");
+  });
+}
