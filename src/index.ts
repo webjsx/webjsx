@@ -1,9 +1,34 @@
+import { flatten, isFragment, isMountedElement } from "./utils.js";
+import { exception } from "./exception.js";
+
 // Type definitions for props, elements, and components
+export type BasicPrimitive = string | number | boolean | bigint;
 
-type WebJsxElement = HTMLElement | Text;
-type ChildElement = WebJsxElement | Array<WebJsxElement> | string | number;
+export type RenderedNode =
+  | WebJsxFragment
+  | HTMLElement
+  | Text
+  | BasicPrimitive
+  | undefined
+  | Array<RenderedNode>;
 
-type MountedElement = HTMLElement & {
+export type WebJsxFragment = {
+  type: "WEBJSX_FRAGMENT";
+  children: Array<RenderedNode>;
+};
+
+export type Props = {
+  children?: RenderedNode[];
+  [key: string]: any;
+};
+
+/*
+  Fragment constructor.
+  We simply use it as a marker in jsx-runtime.
+*/
+export const Fragment: unique symbol = Symbol.for("WEBJSX_FRAGMENT");
+
+export type MountedElement = HTMLElement & {
   __webjsxComponent: Component<any>;
 };
 
@@ -18,9 +43,9 @@ export type WebJsxEnvType = {
 };
 
 // Component class for creating custom elements
-export class Component<TProps extends Record<string, any>> {
+export class Component<TProps extends Props> {
   name: string;
-  render: (props: TProps, component: Component<TProps>) => WebJsxElement;
+  render: (props: TProps, component: Component<TProps>) => RenderedNode;
   element?: HTMLElement;
   props: TProps | undefined;
   attachShadow: boolean;
@@ -28,7 +53,7 @@ export class Component<TProps extends Record<string, any>> {
 
   constructor(config: {
     name: string;
-    render: (props: TProps, component: Component<TProps>) => WebJsxElement;
+    render: (props: TProps, component: Component<TProps>) => RenderedNode;
     attachShadow?: boolean;
     shadowRootMode?: "open" | "closed";
   }) {
@@ -61,7 +86,8 @@ export class Component<TProps extends Record<string, any>> {
 
         // Re-render and append new content
         const newContent = this.render(this.props as TProps, this);
-        target.appendChild(newContent);
+
+        appendChildRecursive(newContent, target);
       }
     }
   }
@@ -70,7 +96,7 @@ export class Component<TProps extends Record<string, any>> {
 // Registry to keep track of defined custom elements
 const customElementRegistry: { [key: string]: boolean } = {};
 
-// Main function to create a WebJSX instance
+// Function to create WebJSX instance
 export function createWebJsxInstance(customEnv: any) {
   const env: WebJsxEnvType = customEnv;
 
@@ -81,75 +107,113 @@ export function createWebJsxInstance(customEnv: any) {
   };
 
   // Function to create DOM elements or custom components
-  function createElement<TProps extends Record<string, any>>(
+  function createElement<TProps extends Props>(
     tag:
       | keyof HTMLElementTagNameMap
-      | ((props: TProps | null) => Component<TProps>),
-    props: TProps,
-    ...children: ChildElement[]
-  ): WebJsxElement {
-    if (typeof tag === "function") {
-      // Handle custom component
-      const webjsxComponent = tag(props);
+      | ((props: TProps | null) => Component<TProps>)
+      | typeof Fragment,
+    props: TProps = {} as TProps,
+    ...children: RenderedNode[]
+  ): HTMLElement | WebJsxFragment {
+    // Merge and flatten children into props.children
+    const childrenFlattened =
+      children.length > 1
+        ? flatten(children)
+        : children.length === 1
+        ? flatten(children[0])
+        : undefined;
 
-      // Register custom element if not already registered
-      if (!customElementRegistry[webjsxComponent.name]) {
-        class CustomElement extends env.__internal.HTMLElement {}
-        env.window.customElements.define(webjsxComponent.name, CustomElement);
-        customElementRegistry[webjsxComponent.name] = true;
-      }
-
-      const customElement = env.document.createElement(webjsxComponent.name);
-
-      // Set up shadow DOM if needed
-      let shadowRoot;
-      if (webjsxComponent.attachShadow) {
-        shadowRoot = customElement.attachShadow({
-          mode: webjsxComponent.shadowRootMode,
-        });
-      }
-
-      // Attach element to webjsxComponent
-      webjsxComponent.element = customElement;
-
-      // Reverse attach component in customElement
-      (customElement as MountedElement).__webjsxComponent = webjsxComponent;
-
-      // Set attributes and handle ref
-      if (props) {
-        if (props.ref !== undefined) {
-          props.ref.value = customElement;
-        }
-
-        for (const [key, value] of Object.entries(props)) {
-          customElement.setAttribute(key, String(value));
-        }
-      }
-
-      // Render component content
-      webjsxComponent.setProps(props);
-      const renderedContent = webjsxComponent.render(props, webjsxComponent);
-
-      // Append content to shadow root or element
-      if (shadowRoot) {
-        shadowRoot.appendChild(renderedContent);
-      } else {
-        customElement.appendChild(renderedContent);
-      }
-
-      return customElement;
+    if (childrenFlattened !== undefined) {
+      props = { ...props, children: childrenFlattened };
     }
 
+    return typeof tag === "function"
+      ? createCustomElement(tag, props)
+      : tag === Fragment
+      ? createFragment(props.children ?? [])
+      : typeof tag === "string"
+      ? createDOMElement(tag, props)
+      : exception(`Unable to handle tag ${tag}`);
+  }
+
+  function createCustomElement<TProps extends Props>(
+    customElementCtor: (props: TProps | null) => Component<TProps>,
+    props: TProps = {} as TProps
+  ): HTMLElement {
+    // Handle custom component
+    const webjsxComponent = customElementCtor(props);
+
+    // Register custom element if not already registered
+    if (!customElementRegistry[webjsxComponent.name]) {
+      class CustomElement extends env.__internal.HTMLElement {}
+      env.window.customElements.define(webjsxComponent.name, CustomElement);
+      customElementRegistry[webjsxComponent.name] = true;
+    }
+
+    const customElement = env.document.createElement(webjsxComponent.name);
+
+    // Set up shadow DOM if needed
+    let shadowRoot;
+    if (webjsxComponent.attachShadow) {
+      shadowRoot = customElement.attachShadow({
+        mode: webjsxComponent.shadowRootMode,
+      });
+    }
+
+    // Attach element to webjsxComponent
+    webjsxComponent.element = customElement;
+
+    // Reverse attach component in customElement
+    (customElement as MountedElement).__webjsxComponent = webjsxComponent;
+
+    // Set attributes and handle ref, excluding 'children'
+    if (props) {
+      if (props.ref !== undefined) {
+        props.ref.value = customElement;
+      }
+
+      for (const [key, value] of Object.entries(props)) {
+        if (key === "children") {
+          // Do not set 'children' as an attribute
+          continue;
+        }
+        customElement.setAttribute(key, String(value));
+      }
+    }
+
+    // Render component content with updated props (including children)
+    webjsxComponent.setProps(props);
+    const renderedContent = webjsxComponent.render(props, webjsxComponent);
+    appendChildRecursive(renderedContent, shadowRoot ?? customElement);
+
+    return customElement;
+  }
+
+  function createFragment(children: RenderedNode[]): WebJsxFragment {
+    return {
+      type: "WEBJSX_FRAGMENT",
+      children,
+    };
+  }
+
+  function createDOMElement<TProps extends Props>(
+    tag: string,
+    props: TProps
+  ): HTMLElement {
     // Handle standard HTML elements
     const element = env.document.createElement(tag);
 
-    // Set properties or attributes
+    // Set properties or attributes, excluding 'children'
     if (props) {
       if (props.ref !== undefined) {
         props.ref.value = element;
       }
 
       for (const [key, value] of Object.entries(props)) {
+        if (key === "children") {
+          // Do not set 'children' as an attribute
+          continue;
+        }
         if (key in element) {
           (element as any)[key] = value;
         } else {
@@ -158,31 +222,47 @@ export function createWebJsxInstance(customEnv: any) {
       }
     }
 
-    // Recursively append children, which could be text, numbers, elements, or nested arrays
-    function appendChildRecursive(child: ChildElement | ChildElement[]) {
-      if (typeof child === "string" || typeof child === "number") {
-        element.appendChild(env.document.createTextNode(String(child)));
-      } else if (
-        child instanceof env.__internal.HTMLElement ||
-        child instanceof env.__internal.Text
-      ) {
-        element.appendChild(child);
-      } else if (Array.isArray(child)) {
-        child.forEach((nestedChild) => appendChildRecursive(nestedChild));
-      }
-    }
-
-    // Iterate over the children and handle them (could be nested arrays)
-    children.forEach((child) => appendChildRecursive(child));
+    props.children?.forEach((child) => {
+      appendChildRecursive(child, element);
+    });
 
     return element;
   }
 
-  // Function to mount a component to the DOM
-  function mount(
-    component: WebJsxElement,
-    container: HTMLElement | string | null
+  // Recursive function to append child elements
+  function appendChildRecursive(
+    child: RenderedNode,
+    parent: HTMLElement | ShadowRoot
   ) {
+    if (
+      typeof child === "string" ||
+      typeof child === "number" ||
+      typeof child === "boolean" ||
+      typeof child === "bigint"
+    ) {
+      parent.appendChild(env.document.createTextNode(String(child)));
+    } else if (
+      child instanceof env.__internal.HTMLElement ||
+      child instanceof env.__internal.Text
+    ) {
+      parent.appendChild(child);
+    } else if (Array.isArray(child)) {
+      child.forEach((nestedChild) => appendChildRecursive(nestedChild, parent));
+    } else if (isFragment(child)) {
+      flatten(child.children).forEach((nestedChild) =>
+        appendChildRecursive(nestedChild, parent)
+      );
+    } else {
+      console.log({
+        child,
+      });
+      // Handle other potential types or throw an error
+      throw new Error("Unsupported child type");
+    }
+  }
+
+  // Function to mount a component to the DOM
+  function mount(element: HTMLElement, container: HTMLElement | string | null) {
     const root =
       typeof container === "string"
         ? env.document.querySelector(container)
@@ -197,18 +277,18 @@ export function createWebJsxInstance(customEnv: any) {
       root.removeChild(root.firstChild);
     }
 
-    // Append the component
-    root.appendChild(component);
+    root.appendChild(element);
   }
 
   return {
     createElement,
     mount,
+    appendChildRecursive,
   };
 }
 
 // Determine the global object (window or globalThis)
-const windowObject = globalThis !== undefined ? globalThis : window;
+const windowObject = typeof globalThis !== "undefined" ? globalThis : window;
 
 // Create initial WebJSX instance
 let webjsxInstance = createWebJsxInstance({
@@ -223,19 +303,19 @@ export function setCustomEnv(customEnv: any) {
 
 // Export mount function
 export function mount(
-  component: WebJsxElement,
+  component: HTMLElement,
   container: HTMLElement | string | null
 ) {
   return webjsxInstance.mount(component, container);
 }
 
 // Export createElement function
-export function createElement<TProps extends Record<string, any>>(
+export function createElement<TProps extends Props>(
   tag:
     | keyof HTMLElementTagNameMap
     | ((props: TProps | null) => Component<TProps>),
-  props: TProps,
-  ...children: ChildElement[]
+  props: TProps = {} as TProps,
+  ...children: RenderedNode[]
 ) {
   return webjsxInstance.createElement(tag, props, ...children);
 }
@@ -245,22 +325,20 @@ export function getComponent(element: HTMLElement): Component<any> {
     ? element.__webjsxComponent
     : exception(
         `${
-          `${element.tagName}#${element.getAttribute("id")}` ??
-          `${element.tagName}#${element.id}` ??
-          element.tagName
+          element.getAttribute("id")
+            ? `${element.tagName}#${element.getAttribute("id")}`
+            : element.id
+            ? `${element.tagName}#${element.id}`
+            : element.tagName
         } has no mounted component.`
       );
 }
 
-function exception(message: string): never {
-  throw new Error(message);
-}
-
-function isMountedElement(element: HTMLElement): element is MountedElement {
-  return (
-    (element as unknown as { __webjsxComponent: Component<any> })
-      .__webjsxComponent !== undefined
-  );
+function appendChildRecursive(
+  child: RenderedNode,
+  parent: HTMLElement | ShadowRoot
+) {
+  return webjsxInstance.appendChildRecursive(child, parent);
 }
 
 /* JSX Types */
@@ -282,18 +360,3 @@ function isMountedElement(element: HTMLElement): element is MountedElement {
 */
 // This covers a consuming project using the webjsx.createElement jsxFactory
 export * as JSX from "./jsxTypes.js";
-
-// If jsxTypes is imported using named imports, esbuild doesn't know how to
-// erase the imports and gets pset that "JSX" isn't an actual literal value
-// inside the jsxTypes.ts module. We have to import as a different name than the
-// export within createElement because I can't find a way to export a namespace
-// within a namespace without using import aliases.
-import * as JSXTypes from "./jsxTypes.js";
-// The createElement namespace exists so that users can set their TypeScript
-// jsxFactory to createElement instead of webjsx.createElement.// eslint-disable-next-line @typescript-eslint/no-namespace
-
-// eslint-disable-next-line @typescript-eslint/no-namespace
-export namespace createElement {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  export import JSX = JSXTypes;
-}

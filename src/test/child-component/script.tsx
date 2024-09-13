@@ -31,3 +31,28 @@ export function run(dom: JSDOM) {
     webjsx.mount(<ParentComponent />, "#root");
   });
 }
+
+const ParentComponentWithChildArray = () => {
+  return new webjsx.Component({
+    name: "parent-component",
+    render() {
+      return (
+        <>
+          <ChildComponent />
+          <ChildComponent />
+          <ChildComponent />
+        </>
+      );
+    },
+  });
+};
+
+export function runChildArray(dom: JSDOM) {
+  window = dom.window;
+  document = window.document;
+  webjsx.setCustomEnv({ window, document });
+
+  window.addEventListener("load", () => {
+    webjsx.mount(<ParentComponentWithChildArray />, "#root");
+  });
+}
