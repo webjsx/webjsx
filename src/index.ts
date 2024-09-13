@@ -171,6 +171,9 @@ export function createWebJsxInstance(customEnv: any) {
     const component = ctor(props);
 
     // Register custom element if not already registered
+    // ---- TODO ----
+    // For now these are empty Elements
+    // Not real web components.
     if (!customElementRegistry[component.name]) {
       class CustomElement extends (component.ElementClass ??
         env.__internal.HTMLElement) {}
