@@ -5,7 +5,7 @@ import { run, counterButtonRef } from "./script.js";
 
 export default function () {
   describe("component state", () => {
-    it("uses and updated component state", async () => {
+    it("uses and updates component state", async () => {
       const dom = new JSDOM(htmlFile(), {
         runScripts: "outside-only",
         resources: "usable",

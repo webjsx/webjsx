@@ -1,14 +1,19 @@
-import { Component, MountedElement, RenderedNode, WebJsxFragment } from "./index.js";
+import {
+  BasicPrimitive,
+  MountedElement,
+  RenderedNode,
+  VirtualComponent,
+  VirtualElement,
+  VirtualFragment
+} from "./index.js";
 
 // Utility function to flatten child elements
 export function flatten(child: RenderedNode | RenderedNode[]): RenderedNode[] {
   const recurse = (item: RenderedNode | RenderedNode[]): RenderedNode[] =>
     Array.isArray(item)
       ? item.flatMap(recurse)
-      : isFragment(item)
-      ? item.children
-        ? recurse(item.children)
-        : []
+      : isVirtualFragment(item)
+      ? item.children.flatMap(recurse)
       : item !== undefined
       ? [item]
       : [];
@@ -17,19 +22,32 @@ export function flatten(child: RenderedNode | RenderedNode[]): RenderedNode[] {
   return recurse(child);
 }
 
-// Utility function to check if an element is a fragment
-export function isFragment(element: RenderedNode): element is WebJsxFragment {
+export function isVirtualComponent(
+  node: RenderedNode
+): node is VirtualComponent {
+  return node !== undefined && (node as VirtualComponent).type === "COMPONENT";
+}
+
+export function isVirtualFragment(node: RenderedNode): node is VirtualFragment {
+  return node !== undefined && (node as VirtualFragment).type === "FRAGMENT";
+}
+
+export function isVirtualElement(node: RenderedNode): node is VirtualElement {
+  return node !== undefined && (node as VirtualElement).type === "ELEMENT";
+}
+
+export function isPrimitive(node: RenderedNode): node is BasicPrimitive {
   return (
-    element !== undefined &&
-    (element as WebJsxFragment).type === "WEBJSX_FRAGMENT"
+    typeof node === "string" ||
+    typeof node === "number" ||
+    typeof node === "boolean" ||
+    typeof node === "bigint"
   );
 }
 
+// Utility function to check if an element has a mounted component
 export function isMountedElement(
   element: HTMLElement
 ): element is MountedElement {
-  return (
-    (element as unknown as { __webjsxComponent: Component<any> })
-      .__webjsxComponent !== undefined
-  );
+  return (element as any).__webjsxComponent !== undefined;
 }

@@ -1,22 +1,46 @@
-import { flatten, isFragment, isMountedElement } from "./utils.js";
+import {
+  flatten,
+  isMountedElement,
+  isPrimitive,
+  isVirtualComponent,
+  isVirtualElement,
+  isVirtualFragment,
+} from "./utils.js";
 import { exception } from "./exception.js";
 
 // Type definitions for props, elements, and components
 export type BasicPrimitive = string | number | boolean | bigint;
 
 export type RenderedNode =
-  | WebJsxFragment
-  | HTMLElement
-  | Text
+  | VirtualComponent
+  | VirtualElement
+  | VirtualFragment
   | BasicPrimitive
-  | undefined
-  | Array<RenderedNode>;
+  | undefined;
 
-export type WebJsxFragment = {
-  type: "WEBJSX_FRAGMENT";
-  children: Array<RenderedNode>;
+export type VirtualComponent = {
+  type: "COMPONENT";
+  ctor: ComponentConstructor;
+  component: Component<any>;
+  props: Props;
+  children: RenderedNode[];
 };
 
+export type VirtualElement = {
+  type: "ELEMENT";
+  tag: string;
+  props: Props;
+  children: RenderedNode[];
+};
+
+export type VirtualFragment = {
+  type: "FRAGMENT";
+  children: RenderedNode[];
+};
+
+export type ComponentConstructor = (props: Props | null) => Component<any>;
+
+// Props type
 export type Props = {
   children?: RenderedNode[];
   [key: string]: any;
@@ -24,7 +48,7 @@ export type Props = {
 
 /*
   Fragment constructor.
-  We simply use it as a marker in jsx-runtime.
+  We use it as a marker in jsx-runtime.
 */
 export const Fragment: unique symbol = Symbol.for("WEBJSX_FRAGMENT");
 
@@ -71,25 +95,27 @@ export class Component<TProps extends Props> {
 
   // Method to update the component's DOM
   update(newProps?: TProps) {
+    // Since we're calling an update, the custom element must exist.
+    const mountedElement = this.element!;
+
     if (newProps !== undefined) {
       this.setProps(newProps);
     }
 
-    if (this.element) {
-      const target = this.attachShadow ? this.element.shadowRoot : this.element;
+    const target = this.attachShadow
+      ? mountedElement.shadowRoot!
+      : mountedElement;
 
-      if (target) {
-        // Clear existing content
-        while (target.firstChild) {
-          target.removeChild(target.firstChild);
-        }
+    clearChildNodes(target);
 
-        // Re-render and append new content
-        const newContent = this.render(this.props as TProps, this);
+    // Re-render and append new content
+    const newContent = this.render(this.props as TProps, this);
 
-        appendChildRecursive(newContent, target);
-      }
-    }
+    appendChildRecursive(
+      newContent,
+      mountedElement,
+      this.attachShadow ? mountedElement.shadowRoot ?? undefined : undefined
+    );
   }
 }
 
@@ -106,163 +132,153 @@ export function createWebJsxInstance(customEnv: any) {
     HTMLElement: (env.window as any).HTMLElement,
   };
 
-  // Function to create DOM elements or custom components
+  // Function to create VirtualElements or fragments
   function createElement<TProps extends Props>(
-    tag:
-      | keyof HTMLElementTagNameMap
-      | ((props: TProps | null) => Component<TProps>)
-      | typeof Fragment,
+    tag: string | ComponentConstructor | typeof Fragment,
     props: TProps = {} as TProps,
     ...children: RenderedNode[]
-  ): HTMLElement | WebJsxFragment {
+  ): RenderedNode {
     // Merge and flatten children into props.children
     const childrenFlattened =
-      children.length > 1
-        ? flatten(children)
-        : children.length === 1
-        ? flatten(children[0])
-        : undefined;
+      children.length > 0 ? flatten(children) : undefined;
 
     if (childrenFlattened !== undefined) {
       props = { ...props, children: childrenFlattened };
     }
 
     return typeof tag === "function"
-      ? createCustomElement(tag, props)
+      ? createVirtualComponent(tag, props)
       : tag === Fragment
-      ? createFragment(props.children ?? [])
+      ? createVirtualFragment(props.children ?? [])
       : typeof tag === "string"
-      ? createDOMElement(tag, props)
+      ? createVirtualElement(tag, props)
       : exception(`Unable to handle tag ${tag}`);
   }
 
-  function createCustomElement<TProps extends Props>(
-    customElementCtor: (props: TProps | null) => Component<TProps>,
+  function createVirtualComponent<TProps extends Props>(
+    ctor: ComponentConstructor,
     props: TProps = {} as TProps
-  ): HTMLElement {
+  ): VirtualComponent {
     // Handle custom component
-    const webjsxComponent = customElementCtor(props);
+    const component = ctor(props);
 
     // Register custom element if not already registered
-    if (!customElementRegistry[webjsxComponent.name]) {
+    if (!customElementRegistry[component.name]) {
       class CustomElement extends env.__internal.HTMLElement {}
-      env.window.customElements.define(webjsxComponent.name, CustomElement);
-      customElementRegistry[webjsxComponent.name] = true;
+      env.window.customElements.define(component.name, CustomElement);
+      customElementRegistry[component.name] = true;
     }
 
-    const customElement = env.document.createElement(webjsxComponent.name);
-
-    // Set up shadow DOM if needed
-    let shadowRoot;
-    if (webjsxComponent.attachShadow) {
-      shadowRoot = customElement.attachShadow({
-        mode: webjsxComponent.shadowRootMode,
-      });
-    }
-
-    // Attach element to webjsxComponent
-    webjsxComponent.element = customElement;
-
-    // Reverse attach component in customElement
-    (customElement as MountedElement).__webjsxComponent = webjsxComponent;
-
-    // Set attributes and handle ref, excluding 'children'
-    if (props) {
-      if (props.ref !== undefined) {
-        props.ref.value = customElement;
-      }
-
-      for (const [key, value] of Object.entries(props)) {
-        if (key === "children") {
-          // Do not set 'children' as an attribute
-          continue;
-        }
-        customElement.setAttribute(key, String(value));
-      }
-    }
-
-    // Render component content with updated props (including children)
-    webjsxComponent.setProps(props);
-    const renderedContent = webjsxComponent.render(props, webjsxComponent);
-    appendChildRecursive(renderedContent, shadowRoot ?? customElement);
-
-    return customElement;
+    // Create a virtual element representing the custom component
+    return {
+      type: "COMPONENT",
+      ctor,
+      component: component,
+      props,
+      children: [], // Children will be handled within the component's render method
+    };
   }
 
-  function createFragment(children: RenderedNode[]): WebJsxFragment {
+  function createVirtualFragment(children: RenderedNode[]): VirtualFragment {
     return {
-      type: "WEBJSX_FRAGMENT",
+      type: "FRAGMENT",
       children,
     };
   }
 
-  function createDOMElement<TProps extends Props>(
+  function createVirtualElement<TProps extends Props>(
     tag: string,
     props: TProps
-  ): HTMLElement {
-    // Handle standard HTML elements
-    const element = env.document.createElement(tag);
-
-    // Set properties or attributes, excluding 'children'
-    if (props) {
-      if (props.ref !== undefined) {
-        props.ref.value = element;
-      }
-
-      for (const [key, value] of Object.entries(props)) {
-        if (key === "children") {
-          // Do not set 'children' as an attribute
-          continue;
-        }
-        if (key in element) {
-          (element as any)[key] = value;
-        } else {
-          element.setAttribute(key, String(value));
-        }
-      }
-    }
-
-    props.children?.forEach((child) => {
-      appendChildRecursive(child, element);
-    });
-
-    return element;
+  ): VirtualElement {
+    return {
+      type: "ELEMENT",
+      tag,
+      props,
+      children: props.children ?? [],
+    };
   }
 
   // Recursive function to append child elements
   function appendChildRecursive(
     child: RenderedNode,
-    parent: HTMLElement | ShadowRoot
+    parent: Element,
+    shadowRoot: ShadowRoot | undefined
   ) {
-    if (
-      typeof child === "string" ||
-      typeof child === "number" ||
-      typeof child === "boolean" ||
-      typeof child === "bigint"
-    ) {
-      parent.appendChild(env.document.createTextNode(String(child)));
-    } else if (
-      child instanceof env.__internal.HTMLElement ||
-      child instanceof env.__internal.Text
-    ) {
-      parent.appendChild(child);
-    } else if (Array.isArray(child)) {
-      child.forEach((nestedChild) => appendChildRecursive(nestedChild, parent));
-    } else if (isFragment(child)) {
-      flatten(child.children).forEach((nestedChild) =>
-        appendChildRecursive(nestedChild, parent)
+    // primitive
+    if (isPrimitive(child)) {
+      (shadowRoot ?? parent).appendChild(
+        env.document.createTextNode(String(child))
       );
-    } else {
-      console.log({
-        child,
+    }
+    // fragment
+    else if (isVirtualFragment(child)) {
+      child.children.forEach((nestedChild) =>
+        appendChildRecursive(nestedChild, parent, shadowRoot)
+      );
+    }
+    // component
+    else if (isVirtualComponent(child)) {
+      const customElement = env.document.createElement(child.component.name);
+      (shadowRoot ?? parent).appendChild(customElement);
+
+      child.component.element = customElement;
+      
+      attachProps(customElement, child.props);
+      const contents = child.component.render(child.props, child.component);
+
+      appendChildRecursive(
+        contents,
+        customElement,
+        child.component.attachShadow
+          ? customElement.attachShadow({ mode: child.component.shadowRootMode })
+          : undefined
+      );
+    }
+    // element
+    else if (isVirtualElement(child)) {
+      const namespace = parent.namespaceURI || "http://www.w3.org/1999/xhtml";
+      const isSVG =
+        namespace === "http://www.w3.org/2000/svg" || isSVGTag(child.tag);
+
+      const ns = isSVG ? "http://www.w3.org/2000/svg" : undefined;
+
+      const element = ns
+        ? env.document.createElementNS(ns, child.tag)
+        : env.document.createElement(child.tag);
+
+      (shadowRoot ?? parent).appendChild(element);
+
+      attachProps(element, child.props);
+
+      child.children.forEach((nestedChild) => {
+        appendChildRecursive(nestedChild, element, undefined);
       });
-      // Handle other potential types or throw an error
-      throw new Error("Unsupported child type");
     }
   }
 
+  // Helper function to check if a tag is an SVG tag
+  function isSVGTag(tag: keyof HTMLElementTagNameMap | string): boolean {
+    const svgTags = new Set([
+      "svg",
+      "circle",
+      "ellipse",
+      "g",
+      "line",
+      "path",
+      "polygon",
+      "polyline",
+      "rect",
+      "text",
+      // Add more SVG tags as needed
+    ]);
+    return typeof tag === "string" && svgTags.has(tag);
+  }
+
   // Function to mount a component to the DOM
-  function mount(element: HTMLElement, container: HTMLElement | string | null) {
+  function mount(
+    element: RenderedNode,
+    container: HTMLElement | string | null
+  ) {
     const root =
       typeof container === "string"
         ? env.document.querySelector(container)
@@ -273,11 +289,10 @@ export function createWebJsxInstance(customEnv: any) {
     }
 
     // Clear existing content
-    while (root.firstChild) {
-      root.removeChild(root.firstChild);
-    }
+    clearChildNodes(root);
 
-    root.appendChild(element);
+    // Append the element
+    appendChildRecursive(element, root, undefined);
   }
 
   return {
@@ -303,7 +318,7 @@ export function setCustomEnv(customEnv: any) {
 
 // Export mount function
 export function mount(
-  component: HTMLElement,
+  component: RenderedNode,
   container: HTMLElement | string | null
 ) {
   return webjsxInstance.mount(component, container);
@@ -311,12 +326,10 @@ export function mount(
 
 // Export createElement function
 export function createElement<TProps extends Props>(
-  tag:
-    | keyof HTMLElementTagNameMap
-    | ((props: TProps | null) => Component<TProps>),
+  tag: keyof HTMLElementTagNameMap | ComponentConstructor | typeof Fragment,
   props: TProps = {} as TProps,
   ...children: RenderedNode[]
-) {
+): RenderedNode {
   return webjsxInstance.createElement(tag, props, ...children);
 }
 
@@ -334,11 +347,40 @@ export function getComponent(element: HTMLElement): Component<any> {
       );
 }
 
+function attachProps<TProps extends Props>(element: Element, props: TProps) {
+  // Set properties or attributes, excluding 'children'
+  if (props) {
+    if (props.ref !== undefined) {
+      props.ref.value = element;
+    }
+
+    for (const [key, value] of Object.entries(props)) {
+      if (key === "children") {
+        // Do not set 'children' as an attribute
+        continue;
+      }
+      if (key in element) {
+        (element as any)[key] = value;
+      } else {
+        element.setAttribute(key, String(value));
+      }
+    }
+  }
+}
+
 function appendChildRecursive(
   child: RenderedNode,
-  parent: HTMLElement | ShadowRoot
+  parent: Element,
+  shadowRoot: ShadowRoot | undefined
 ) {
-  return webjsxInstance.appendChildRecursive(child, parent);
+  return webjsxInstance.appendChildRecursive(child, parent, shadowRoot);
+}
+
+function clearChildNodes(element: Element | ShadowRoot) {
+  // Clear existing content
+  while (element.firstChild) {
+    element.removeChild(element.firstChild);
+  }
 }
 
 /* JSX Types */
@@ -355,7 +397,7 @@ function appendChildRecursive(
   import, so it doesn't need to be declared as a namespace inside jsxTypes.ts.
   However, attempting to declare it that way causes no end of headaches either
   when trying to reexport it here, or reexport it from a createElement
-  namespace. Some errors arise at comple or build time, and some are only
+  namespace. Some errors arise at compile or build time, and some are only
   visible when a project attempts to consume webjsx.
 */
 // This covers a consuming project using the webjsx.createElement jsxFactory
