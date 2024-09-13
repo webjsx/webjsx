@@ -13,6 +13,9 @@ export type BasicPrimitive = string | number | boolean | bigint;
 
 export type Ref<T> = { value?: T };
 
+type ClassOf<T> = new (...args: any[]) => T;
+type ElementClass = ClassOf<HTMLElement>;
+
 export type RenderedNode =
   | VirtualComponent
   | VirtualElement
@@ -72,7 +75,8 @@ export type WebJsxEnvType = {
 export class Component<TProps extends Props> {
   name: string;
   render: (props: TProps, component: Component<TProps>) => RenderedNode;
-  element?: HTMLElement;
+  ElementClass: ElementClass | undefined;
+  element: HTMLElement | undefined;
   props: TProps | undefined;
   attachShadow: boolean;
   shadowRootMode: "open" | "closed";
@@ -82,6 +86,7 @@ export class Component<TProps extends Props> {
     render: (props: TProps, component: Component<TProps>) => RenderedNode;
     attachShadow?: boolean;
     shadowRootMode?: "open" | "closed";
+    ElementClass?: ElementClass;
   }) {
     this.name = config.name;
     this.render = config.render;
@@ -89,6 +94,7 @@ export class Component<TProps extends Props> {
     this.attachShadow = config.attachShadow ?? true;
     this.shadowRootMode = config.shadowRootMode ?? "open";
     this.props = undefined;
+    this.ElementClass = config.ElementClass;
   }
 
   setProps(props: TProps) {
@@ -166,7 +172,8 @@ export function createWebJsxInstance(customEnv: any) {
 
     // Register custom element if not already registered
     if (!customElementRegistry[component.name]) {
-      class CustomElement extends env.__internal.HTMLElement {}
+      class CustomElement extends (component.ElementClass ??
+        env.__internal.HTMLElement) {}
       env.window.customElements.define(component.name, CustomElement);
       customElementRegistry[component.name] = true;
     }
@@ -221,11 +228,11 @@ export function createWebJsxInstance(customEnv: any) {
     // component
     else if (isVirtualComponent(child)) {
       const customElement = env.document.createElement(child.component.name);
+      attachProps(customElement, child.props);
       (shadowRoot ?? parent).appendChild(customElement);
 
       child.component.element = customElement;
 
-      attachProps(customElement, child.props);
       const contents = child.component.render(child.props, child.component);
 
       appendChildRecursive(
@@ -248,9 +255,9 @@ export function createWebJsxInstance(customEnv: any) {
         ? env.document.createElementNS(ns, child.tag)
         : env.document.createElement(child.tag);
 
-      (shadowRoot ?? parent).appendChild(element);
-
       attachProps(element, child.props);
+
+      (shadowRoot ?? parent).appendChild(element);
 
       child.children.forEach((nestedChild) => {
         appendChildRecursive(nestedChild, element, undefined);
