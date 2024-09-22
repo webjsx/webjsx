@@ -14,11 +14,41 @@ export function applyDiff(parent: Node, newVirtualNode: VNode | VNode[]): void {
 }
 
 /**
+ * Flattens the list of virtual nodes by replacing Fragments with their children.
+ * @param vnodes The array of virtual nodes to flatten.
+ * @returns A new array of virtual nodes with Fragments flattened.
+ */
+function flattenVNodes(vnodes: VNode[]): VNode[] {
+  const flat: VNode[] = [];
+  vnodes.forEach((vnode) => {
+    if (isFragment(vnode)) {
+      flat.push(...(vnode.props.children || []));
+    } else {
+      flat.push(vnode);
+    }
+  });
+  return flat;
+}
+
+/**
+ * Type guard to check if a VNode is a Fragment.
+ * @param vnode The virtual node to check.
+ * @returns True if vnode is a Fragment, false otherwise.
+ */
+function isFragment(vnode: VNode): vnode is VElement {
+  return typeof vnode === "object" && vnode !== null && vnode.type === Fragment;
+}
+
+/**
  * Diffs and updates the children of a DOM node based on the new virtual nodes.
  * @param parent The parent DOM node whose children will be diffed.
  * @param newVNodes An array of new virtual nodes.
  */
 function diffChildren(parent: Node, newVNodes: VNode[]): void {
+  // Step 1: Flatten the newVNodes by replacing Fragments with their children
+  const flattenedVNodes = flattenVNodes(newVNodes);
+
+  // Step 2: Collect existing child nodes
   const existingNodes = Array.from(parent.childNodes);
   const keyedMap = new Map<string | number, Node>();
 
@@ -30,10 +60,19 @@ function diffChildren(parent: Node, newVNodes: VNode[]): void {
     }
   });
 
-  let lastIndex = 0;
+  // Step 3: Remove old keyed nodes not present in newVNodes
+  const newKeys = flattenedVNodes
+    .filter(isVElementWithKey)
+    .map((vnode) => vnode.props.key);
+  existingNodes.forEach((node) => {
+    const key = (node as any).__webjsx_key;
+    if (key != null && !newKeys.includes(key)) {
+      parent.removeChild(node);
+    }
+  });
 
-  for (let i = 0; i < newVNodes.length; i++) {
-    const newVNode = newVNodes[i];
+  // Step 4: Handle insertions and updates
+  flattenedVNodes.forEach((newVNode, i) => {
     const newKey = isVElement(newVNode) ? newVNode.props.key : undefined;
     let existingNode: Node | null = null;
 
@@ -42,18 +81,18 @@ function diffChildren(parent: Node, newVNodes: VNode[]): void {
     }
 
     if (!existingNode && newKey == null) {
-      existingNode = parent.childNodes[i] || null; // **Change Here**
+      existingNode = parent.childNodes[i] || null;
     }
 
     if (existingNode) {
-      const shouldMove = existingNode !== parent.childNodes[i]; // **Change Here**
-      if (shouldMove) {
-        parent.insertBefore(existingNode, parent.childNodes[i] || null); // **Change Here**
+      // Move the node if it's not in the correct position
+      if (existingNode !== parent.childNodes[i]) {
+        parent.insertBefore(existingNode, parent.childNodes[i] || null);
       }
+      // Update the node
       updateNode(existingNode, newVNode);
-      lastIndex = i;
     } else {
-      // Create and insert new node
+      // Create and insert the new node
       const newDomNode = createDomNode(newVNode);
 
       // Assign key attributes if present
@@ -65,26 +104,23 @@ function diffChildren(parent: Node, newVNodes: VNode[]): void {
         );
       }
 
-      parent.insertBefore(newDomNode, parent.childNodes[i] || null); // **Change Here**
-    }
-  }
-
-  // Remove old nodes that are not in newVNodes
-  const newKeys = newVNodes
-    .filter(isVElementWithKey)
-    .map((vnode) => vnode.props.key);
-
-  existingNodes.forEach((node) => {
-    const key = (node as any).__webjsx_key;
-    if (key != null && !newKeys.includes(key)) {
-      parent.removeChild(node);
+      parent.insertBefore(newDomNode, parent.childNodes[i] || null);
     }
   });
 
-  // Handle unkeyed nodes removal
-  if (newVNodes.length < existingNodes.length) {
-    for (let i = newVNodes.length; i < existingNodes.length; i++) {
-      parent.removeChild(existingNodes[i]);
+  // Step 5: Remove excess unkeyed nodes
+  // Re-fetch child nodes after insertions/removals
+  const updatedChildNodes = Array.from(parent.childNodes);
+  const newUnkeyed = flattenedVNodes.filter(
+    (vnode) => !isVElementWithKey(vnode)
+  );
+  const existingUnkeyed = updatedChildNodes.filter(
+    (node) => !(node as any).__webjsx_key
+  );
+
+  if (newUnkeyed.length < existingUnkeyed.length) {
+    for (let i = newUnkeyed.length; i < existingUnkeyed.length; i++) {
+      parent.removeChild(existingUnkeyed[i]);
     }
   }
 }
@@ -111,7 +147,8 @@ function updateNode(domNode: Node, newVNode: VNode): void {
   }
 
   if (newVNode.type === Fragment) {
-    // Handle Fragment
+    // Since we've flattened Fragments in diffChildren, this block should rarely execute.
+    // However, it's kept as a safeguard.
     if (domNode instanceof DocumentFragment) {
       diffChildren(domNode, newVNode.props.children || []);
     } else {
@@ -148,7 +185,7 @@ function updateNode(domNode: Node, newVNode: VNode): void {
 
     // Handle children only if newProps.children is present
     const newChildren = newProps.children;
-    
+
     if (newChildren != null) {
       diffChildren(domNode, newChildren);
     }
@@ -162,7 +199,7 @@ function updateNode(domNode: Node, newVNode: VNode): void {
       (newDomNode as HTMLElement).setAttribute(
         "data-key",
         String(newVNode.props.key)
-      ); // Change here
+      );
     }
 
     domNode.parentNode?.replaceChild(newDomNode, domNode);
