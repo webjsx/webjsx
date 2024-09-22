@@ -514,7 +514,7 @@ describe("JSX Syntax", () => {
       }
 
       handleClick() {
-        this.dispatchEvent(new Event("custom-click"));
+        // do something...
       }
 
       render() {
@@ -534,6 +534,7 @@ describe("JSX Syntax", () => {
       customClicked = true;
     }
 
+    // Render the custom element with JSX and attach the onclick handler
     const vdom = (
       <clickable-element onclick={onCustomClick}></clickable-element>
     );
@@ -544,7 +545,10 @@ describe("JSX Syntax", () => {
     ) as ClickableElement;
     expect(clickableElement).to.exist;
 
-    clickableElement.dispatchEvent(new dom.window.Event("click"));
+    // Simulate a click event
+    clickableElement.click();
+
+    // Expect that the click event triggered the `onCustomClick` handler
     expect(customClicked).to.be.true;
   });
 });

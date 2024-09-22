@@ -316,7 +316,7 @@ describe("applyDiff", () => {
       { title: "Test Title", value: 42 },
       null
     );
-    
+
     applyDiff(container, vdom);
 
     const myElement = container.querySelector("my-element") as MyElement;

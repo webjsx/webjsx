@@ -2,6 +2,9 @@
 
 import { JSDOM } from "jsdom";
 
+import { install as sourceMapInstall } from "source-map-support";
+sourceMapInstall();
+
 // Initialize JSDOM with a basic HTML structure
 const dom = new JSDOM(`<!DOCTYPE html><body><div id="app"></div></body>`, {
   runScripts: "dangerously",
