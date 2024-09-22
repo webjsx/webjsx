@@ -730,7 +730,7 @@ export interface HTMLMarqueeElement extends HTMLElement {
   width?: number | string;
 }
 
-export type IntrinsicElements = {
+type IntrinsicElementsType = {
   // We have to omit the SVG anchor element because both HTML and SVG have an
   // 'a' tag, and TSX gets confused about which one you mean if you have onclick
   // handlers. Sadly that means things get weird if you try to use the SVG
@@ -743,3 +743,5 @@ export type IntrinsicElements = {
     HTMLElementTagNameMap[el]
   >;
 };
+
+export interface IntrinsicElements extends IntrinsicElementsType {}

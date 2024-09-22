@@ -5,7 +5,7 @@
         "--timeout",
         "999999",
         "--colors",
-        "${workspaceFolder}/dist/test/test"
+        "${workspaceFolder}/dist/test/**/*.test.js"
       ],
       "internalConsoleOptions": "openOnSessionStart",
       "name": "Mocha Tests (all)",
@@ -25,7 +25,7 @@
         "--timeout",
         "999999",
         "--colors",
-        "${workspaceFolder}/dist/test/test",
+        "${workspaceFolder}/dist/test/**/*.test.js",
         "-f",
         "'${input:filter}'"
       ],

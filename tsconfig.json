@@ -13,5 +13,5 @@
     "jsxFragmentFactory": "webjsx.Fragment",
     "declaration": true
   },
-  "include": ["./src/**/*"]
+  "include": ["src/test/custom-elements.d.ts", "./src/**/*"]
 }
