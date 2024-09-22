@@ -235,7 +235,7 @@ describe("JSX Syntax", () => {
 
     expect(input).to.exist;
     expect(input?.getAttribute("type")).to.equal("text");
-    expect(input?.getAttribute("value")).to.equal("Sample");
+    expect(input?.value).to.equal("Sample"); // Changed from getAttribute to property
   });
 
   it("should handle dynamic children in JSX", () => {

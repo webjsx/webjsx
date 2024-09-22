@@ -1,5 +1,13 @@
 import { VNode, Fragment } from "./types.js";
 
+/**
+ * Sets attributes and properties on a DOM element based on the provided props.
+ * If the property exists on the element, it sets it as a property.
+ * Otherwise, it sets it as an attribute or property based on the value type.
+ *
+ * @param el - The DOM element to update.
+ * @param props - The new properties to apply.
+ */
 export function setAttributes(
   el: HTMLElement,
   props: { [key: string]: any }
@@ -8,6 +16,7 @@ export function setAttributes(
     if (key === "children" || key === "key") continue;
 
     if (key.startsWith("on") && typeof value === "function") {
+      // Handle event listeners
       const eventName = key.substring(2).toLowerCase();
       const existingListener = (el as any).__webjsx_listeners?.[eventName];
       if (existingListener) {
@@ -18,11 +27,14 @@ export function setAttributes(
         ...((el as any).__webjsx_listeners || {}),
         [eventName]: value,
       };
+    } else if (key in el) {
+      // If the property exists on the element, set it as a property
+      (el as any)[key] = value;
     } else if (typeof value === "string") {
       // Apply string attributes via setAttribute
       el.setAttribute(key, value);
     } else {
-      // Ensure non-string values like `value` are applied as properties
+      // Assign non-string values as properties
       (el as any)[key] = value;
     }
   }
@@ -40,20 +52,88 @@ export function setAttributes(
   for (const key of Object.keys(oldProps)) {
     if (!(key in props)) {
       if (key.startsWith("on")) {
+        // Remove event listeners
         const eventName = key.substring(2).toLowerCase();
         const existingListener = (el as any).__webjsx_listeners?.[eventName];
         if (existingListener) {
           el.removeEventListener(eventName, existingListener);
           delete (el as any).__webjsx_listeners[eventName];
         }
-      } else {
+      } else if (key in el) {
+        // Remove property by setting it to undefined or a default value
         (el as any)[key] = undefined;
+      } else {
+        // Remove attribute if it doesn't exist as a property
+        el.removeAttribute(key);
       }
     }
   }
 
   // Store the current props for future updates
   (el as any).__webjsx_props = props;
+}
+
+/**
+ * Updates attributes and properties on a DOM element based on the new and old props.
+ *
+ * @param el - The DOM element to update.
+ * @param newProps - The new properties to apply.
+ * @param oldProps - The old properties to compare against.
+ */
+export function updateAttributes(
+  el: HTMLElement,
+  newProps: { [key: string]: any },
+  oldProps: { [key: string]: any }
+): void {
+  for (const [key, value] of Object.entries(newProps)) {
+    if (key === "children" || key === "key") continue;
+
+    if (key.startsWith("on") && typeof value === "function") {
+      // Handle event listeners
+      const eventName = key.substring(2).toLowerCase();
+      const existingListener = (el as any).__webjsx_listeners?.[eventName];
+      if (existingListener !== value) {
+        if (existingListener) {
+          el.removeEventListener(eventName, existingListener);
+        }
+        el.addEventListener(eventName, value);
+        (el as any).__webjsx_listeners = {
+          ...((el as any).__webjsx_listeners || {}),
+          [eventName]: value,
+        };
+      }
+    } else if (key in el) {
+      // If the property exists on the element, set it as a property
+      (el as any)[key] = value;
+    } else if (typeof value === "string") {
+      // Apply string attributes via setAttribute
+      el.setAttribute(key, value);
+    } else {
+      // Assign non-string values as properties
+      (el as any)[key] = value;
+    }
+  }
+
+  // Remove old attributes/properties not present in newProps
+  for (const key of Object.keys(oldProps)) {
+    if (!(key in newProps) && key !== "children" && key !== "key") {
+      if (key.startsWith("on")) {
+        // Remove event listeners
+        const eventName = key.substring(2).toLowerCase();
+        const existingListener = (el as any).__webjsx_listeners?.[eventName];
+        if (existingListener) {
+          el.removeEventListener(eventName, existingListener);
+          delete (el as any).__webjsx_listeners[eventName];
+        }
+      } else if (key in el) {
+        // Remove property by setting it to undefined or a default value
+        (el as any)[key] = undefined;
+      } else {
+        // Remove attribute if it doesn't exist as a property
+        el.removeAttribute(key);
+      }
+    }
+  }
 }
 
 export function createDomNode(vnode: VNode): Node {
@@ -96,52 +176,4 @@ export function createDomNode(vnode: VNode): Node {
   }
 
   return el;
-}
-
-export function updateAttributes(
-  el: HTMLElement,
-  newProps: { [key: string]: any },
-  oldProps: { [key: string]: any }
-): void {
-  // Set new and update existing attributes
-  for (const [key, value] of Object.entries(newProps)) {
-    if (key === "children" || key === "key") continue;
-
-    if (key.startsWith("on") && typeof value === "function") {
-      const eventName = key.substring(2).toLowerCase();
-      const existingListener = (el as any).__webjsx_listeners?.[eventName];
-      if (existingListener !== value) {
-        if (existingListener) {
-          el.removeEventListener(eventName, existingListener);
-        }
-        el.addEventListener(eventName, value);
-        (el as any).__webjsx_listeners = {
-          ...((el as any).__webjsx_listeners || {}),
-          [eventName]: value,
-        };
-      }
-    } else if (typeof value === "string") {
-      // If the value is a string, use setAttribute
-      el.setAttribute(key, value);
-    } else {
-      // Otherwise, set it as a property on the element
-      (el as any)[key] = value;
-    }
-  }
-
-  // Remove old attributes not present in new props
-  for (const key of Object.keys(oldProps)) {
-    if (!(key in newProps) && key !== "children" && key !== "key") {
-      if (key.startsWith("on")) {
-        const eventName = key.substring(2).toLowerCase();
-        const existingListener = (el as any).__webjsx_listeners?.[eventName];
-        if (existingListener) {
-          el.removeEventListener(eventName, existingListener);
-          delete (el as any).__webjsx_listeners[eventName];
-        }
-      } else {
-        el.removeAttribute(key);
-      }
-    }
-  }
 }
