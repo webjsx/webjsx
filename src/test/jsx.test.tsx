@@ -33,6 +33,11 @@ declare module "../index.js" {
       "clickable-element": {
         onclick?: (event: Event) => void;
       };
+
+      "dynamic-render-element": {
+        title?: string;
+        count?: number;
+      };
     }
   }
 }
@@ -498,6 +503,60 @@ describe("JSX Syntax", () => {
   });
 
   it("should handle event listeners on custom web components created with JSX", () => {
+    // Define a custom web component that uses applyDiff inside its render method
+    class DynamicRenderElement extends HTMLElement {
+      static get observedAttributes() {
+        return ["title", "count"];
+      }
+
+      private _count: number = 0;
+
+      constructor() {
+        super();
+      }
+
+      connectedCallback() {
+        this.render();
+      }
+
+      attributeChangedCallback(
+        name: string,
+        oldValue: string | null,
+        newValue: string | null
+      ) {
+        if (name === "title" || name === "count") {
+          this.render();
+        }
+      }
+
+      set count(val: number) {
+        this._count = val;
+        this.render();
+      }
+
+      get count() {
+        return this._count;
+      }
+
+      render() {
+        // Using applyDiff to render JSX inside the web component
+        const vdom = (
+          <div>
+            <h2>{this.getAttribute("title")}</h2>
+            <p>Count: {this.count}</p>
+          </div>
+        );
+
+        // Apply the virtual DOM to the component's shadow DOM
+        applyDiff(this, vdom);
+      }
+    }
+
+    // Register the custom element if it hasn't been defined already
+    if (!customElements.get("dynamic-render-element")) {
+      customElements.define("dynamic-render-element", DynamicRenderElement);
+    }
+
     // Define a custom web component with an event
     class ClickableElement extends HTMLElement {
       constructor() {
@@ -550,5 +609,99 @@ describe("JSX Syntax", () => {
 
     // Expect that the click event triggered the `onCustomClick` handler
     expect(customClicked).to.be.true;
+  });
+
+  it("should render JSX within a custom web component using applyDiff", () => {
+    class DynamicRenderElement extends HTMLElement {
+      static get observedAttributes() {
+        return ["title", "count"];
+      }
+
+      private _count: number = 0;
+
+      constructor() {
+        super();
+      }
+
+      connectedCallback() {
+        this.render();
+      }
+
+      attributeChangedCallback(
+        name: string,
+        oldValue: string | null,
+        newValue: string | null
+      ) {
+        if (name === "title" || name === "count") {
+          this.render();
+        }
+      }
+
+      set count(val: number) {
+        this._count = val;
+        this.render();
+      }
+
+      get count() {
+        return this._count;
+      }
+
+      render() {
+        // Using applyDiff to render JSX inside the web component
+        const vdom = (
+          <div>
+            <h2>{this.getAttribute("title")}</h2>
+            <p>Count: {this.count}</p>
+          </div>
+        );
+
+        // Apply the virtual DOM to the component's shadow DOM
+        applyDiff(this, vdom);
+      }
+    }
+    // Render the custom web component with initial attributes
+    const vdom = (
+      <dynamic-render-element
+        title="Initial Title"
+        count={5}
+      ></dynamic-render-element>
+    );
+
+    applyDiff(container, vdom);
+
+    const dynamicElement = container.querySelector(
+      "dynamic-render-element"
+    ) as DynamicRenderElement;
+    expect(dynamicElement).to.exist;
+
+    // Verify that the internal content was rendered correctly using applyDiff
+    const h2 = dynamicElement.querySelector("h2");
+    const p = dynamicElement.querySelector("p");
+
+    expect(h2).to.exist;
+    expect(h2?.textContent).to.equal("Initial Title");
+
+    expect(p).to.exist;
+    expect(p?.textContent).to.equal("Count: 5");
+
+    // Now update the attributes and check if applyDiff correctly updates the content
+    const updatedVdom = (
+      <dynamic-render-element
+        title="Updated Title"
+        count={10}
+      ></dynamic-render-element>
+    );
+
+    applyDiff(container, updatedVdom);
+
+    // Verify the updated content
+    expect(dynamicElement.getAttribute("title")).to.equal("Updated Title");
+    expect(dynamicElement.count).to.equal(10);
+
+    const updatedH2 = dynamicElement.querySelector("h2");
+    const updatedP = dynamicElement.querySelector("p");
+
+    expect(updatedH2?.textContent).to.equal("Updated Title");
+    expect(updatedP?.textContent).to.equal("Count: 10");
   });
 });
