@@ -1,3 +1,4 @@
 .vscode
+.codespin
 dist/test/*
 src/test/*
