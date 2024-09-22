@@ -1,5 +1,3 @@
-// src/createElement.ts
-
 import { Fragment, VElement, VNode } from "./types.js";
 
 /**

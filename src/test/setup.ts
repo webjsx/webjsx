@@ -1,5 +1,3 @@
-// src/test/setup.ts
-
 import { JSDOM } from "jsdom";
 
 import { install as sourceMapInstall } from "source-map-support";

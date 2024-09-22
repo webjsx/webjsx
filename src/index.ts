@@ -1,5 +1,3 @@
-// src/index.ts
-
 export { createElement } from "./createElement.js";
 export { applyDiff } from "./applyDiff.js";
 export { Fragment } from "./types.js";

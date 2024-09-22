@@ -1,5 +1,3 @@
-// src/applyDiff.ts
-
 import { VNode, VElement, Fragment } from "./types.js";
 import { createDomNode, updateAttributes } from "./utils.js";
 

@@ -1,5 +1,3 @@
-// src/types.ts
-
 export const Fragment = Symbol("Fragment");
 
 export type Primitive = string | number | boolean;
