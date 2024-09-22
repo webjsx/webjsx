@@ -18,3 +18,4 @@ const { window } = dom;
 };
 (global as any).HTMLElement = window.HTMLElement;
 (global as any).Node = window.Node;
+(global as any).customElements = window.customElements;

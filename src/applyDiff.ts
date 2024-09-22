@@ -62,7 +62,7 @@ function diffChildren(parent: Node, newVNodes: VNode[]): void {
       if (isVElement(newVNode) && newVNode.props.key != null) {
         (newDomNode as any).__webjsx_key = newVNode.props.key;
         (newDomNode as HTMLElement).setAttribute(
-          "key",
+          "data-key",
           String(newVNode.props.key)
         );
       }
@@ -148,9 +148,12 @@ function updateNode(domNode: Node, newVNode: VNode): void {
       domNode.removeAttribute("data-key"); // Change here
     }
 
-    // Update children
-    const newChildren = newProps.children || [];
-    diffChildren(domNode, newChildren);
+    // Handle children only if newProps.children is present
+    const newChildren = newProps.children;
+    
+    if (newChildren != null) {
+      diffChildren(domNode, newChildren);
+    }
   } else {
     // Replace the node
     const newDomNode = createDomNode(newVNode);
