@@ -54,6 +54,16 @@ describe("applyDiff", () => {
     expect(div?.getAttribute("class")).to.equal("new-class");
   });
 
+  it("should handle string props using setAttribute and non-string props as direct properties", () => {
+    const vdom = createElement("div", { id: "test", customProp: 123 }, "Test");
+    applyDiff(container, vdom);
+
+    const div = container.querySelector("div");
+    expect(div).to.exist;
+    expect(div?.getAttribute("id")).to.equal("test");
+    expect((div as any).customProp).to.equal(123); // Direct property assignment
+  });
+
   it("should add and remove elements correctly", () => {
     const initialVdom = createElement(
       "ul",

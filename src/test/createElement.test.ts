@@ -109,4 +109,10 @@ describe("createElement", () => {
     expect((vdom as VElement).props.src).to.equal("image.png");
     expect((vdom as VElement).props.alt).to.equal("An image");
   });
+
+  it("should handle string props as attributes and non-string props as properties", () => {
+    const vdom = createElement("div", { id: "test", customProp: 123 });
+    expect((vdom as VElement).props.id).to.equal("test");
+    expect((vdom as VElement).props.customProp).to.equal(123);
+  });
 });

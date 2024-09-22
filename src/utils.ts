@@ -21,12 +21,12 @@ export function setAttributes(
         ...((el as any).__webjsx_listeners || {}),
         [eventName]: value,
       };
+    } else if (typeof value === "string") {
+      // If the value is a string, use setAttribute
+      el.setAttribute(key, value);
     } else {
-      if (value == null || value === false) {
-        el.removeAttribute(key);
-      } else {
-        el.setAttribute(key, String(value));
-      }
+      // Otherwise, set it as a property on the element
+      (el as any)[key] = value;
     }
   }
 
@@ -60,7 +60,7 @@ export function createDomNode(vnode: VNode): Node {
 
   const el = document.createElement(vnode.type as string);
 
-  // Set attributes
+  // Set attributes (now includes direct property assignment for non-string props)
   if (vnode.props) {
     setAttributes(el, vnode.props);
   }
@@ -68,7 +68,7 @@ export function createDomNode(vnode: VNode): Node {
   // Assign key to DOM node (use data-key now)
   if (vnode.props.key != null) {
     (el as any).__webjsx_key = vnode.props.key;
-    el.setAttribute("data-key", String(vnode.props.key)); // Change here
+    el.setAttribute("data-key", String(vnode.props.key));
   }
 
   // Handle children
@@ -103,12 +103,12 @@ export function updateAttributes(
           [eventName]: value,
         };
       }
+    } else if (typeof value === "string") {
+      // If the value is a string, use setAttribute
+      el.setAttribute(key, value);
     } else {
-      if (value == null || value === false) {
-        el.removeAttribute(key);
-      } else {
-        el.setAttribute(key, String(value));
-      }
+      // Otherwise, set it as a property on the element
+      (el as any)[key] = value;
     }
   }
 
