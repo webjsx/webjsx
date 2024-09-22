@@ -4,39 +4,56 @@ export function setAttributes(
   el: HTMLElement,
   props: { [key: string]: any }
 ): void {
-  // Set new and update existing attributes
   for (const [key, value] of Object.entries(props)) {
     if (key === "children" || key === "key") continue;
 
     if (key.startsWith("on") && typeof value === "function") {
       const eventName = key.substring(2).toLowerCase();
-      // Remove existing listener if any
       const existingListener = (el as any).__webjsx_listeners?.[eventName];
       if (existingListener) {
         el.removeEventListener(eventName, existingListener);
       }
       el.addEventListener(eventName, value);
-      // Store the listener for future updates
       (el as any).__webjsx_listeners = {
         ...((el as any).__webjsx_listeners || {}),
         [eventName]: value,
       };
     } else if (typeof value === "string") {
-      // If the value is a string, use setAttribute
+      // Apply string attributes via setAttribute
       el.setAttribute(key, value);
     } else {
-      // Otherwise, set it as a property on the element
+      // Ensure non-string values like `value` are applied as properties
       (el as any)[key] = value;
     }
   }
 
-  // Remove old attributes not present in new props
+  // Handle removing old attributes not present in new props
   const currentAttrs = Array.from(el.attributes).map((attr) => attr.name);
   for (const attr of currentAttrs) {
     if (!(attr in props) && !attr.startsWith("on")) {
       el.removeAttribute(attr);
     }
   }
+
+  // Resetting old properties if not in new props
+  const oldProps = (el as any).__webjsx_props || {};
+  for (const key of Object.keys(oldProps)) {
+    if (!(key in props)) {
+      if (key.startsWith("on")) {
+        const eventName = key.substring(2).toLowerCase();
+        const existingListener = (el as any).__webjsx_listeners?.[eventName];
+        if (existingListener) {
+          el.removeEventListener(eventName, existingListener);
+          delete (el as any).__webjsx_listeners[eventName];
+        }
+      } else {
+        (el as any)[key] = undefined;
+      }
+    }
+  }
+
+  // Store the current props for future updates
+  (el as any).__webjsx_props = props;
 }
 
 export function createDomNode(vnode: VNode): Node {
