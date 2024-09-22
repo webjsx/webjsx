@@ -1,19 +1,7 @@
 # webjsx
 
-webjsx is a lightweight virtual DOM library tailored for building modern web applications using JSX, with a strong emphasis on integrating seamlessly with Web Components. Inspired by React's declarative syntax, webjsx offers a minimalistic approach to creating, diffing, and rendering virtual nodes, enabling efficient DOM updates and enhancing developer productivity.
-
-Unlike larger frameworks, webjsx leverages your existing knowledge of DOM APIs and JavaScript, making it easy to incorporate into your projects without a steep learning curve. Its focus on Web Components allows you to harness the full power of custom elements while enjoying the simplicity and expressiveness of JSX.
-
-## Key Features
-
-- **JSX Support:** Write declarative UI components using familiar JSX syntax, enhancing readability and maintainability.
-- **Virtual DOM Diffing:** Efficiently updates the DOM by applying only the necessary changes, optimizing performance.
-- **Web Components Integration:** Seamlessly create and manage custom Web Components with JSX-based rendering.
-- **Fragment Support:** Group multiple elements without adding extra nodes to the DOM.
-- **Event Handling:** Easily attach and manage event listeners directly within JSX.
-- **Keyed Elements:** Optimize list rendering and element reordering with unique keys.
-- **Custom Web Components:** Integrate and manage custom elements effortlessly.
-- **Comprehensive Testing:** Ensure reliability with a robust suite of tests covering various aspects of the library.
+webjsx is a lightweight virtual DOM library for building web applications with JSX and Web Components. It offers a minimal approach to creating, diffing, and rendering virtual nodes for efficient DOM updates.
+webjsx is NOT a framework - it's a library.
 
 ## Installation
 
@@ -106,9 +94,7 @@ if (!customElements.get("my-element")) {
 }
 
 // Create a virtual DOM with the custom Web Component
-const vdom = (
-  <my-element title="Initial Title" count={10}></my-element>
-);
+const vdom = <my-element title="Initial Title" count={10}></my-element>;
 
 // Render the custom Web Component
 const container = document.getElementById("app");
@@ -157,7 +143,12 @@ const List = () => {
 };
 
 const container = document.getElementById("app");
-applyDiff(container, <ul><List /></ul>);
+applyDiff(
+  container,
+  <ul>
+    <List />
+  </ul>
+);
 ```
 
 ## API Reference
@@ -169,15 +160,13 @@ Creates a virtual DOM element.
 **Usage:**
 
 ```jsx
-createElement(type, props, ...children)
+createElement(type, props, ...children);
 ```
 
 - `type`: `string` | `typeof Fragment`  
   The type of the element, e.g., `'div'`, `'span'`, or `Fragment` for grouping.
-  
 - `props`: `object | null`  
   An object containing attributes and properties for the element.
-  
 - `children`: `VNode | VNode[]`  
   The child elements or text content.
 
@@ -194,12 +183,11 @@ Applies the differences between the new virtual node(s) and the existing DOM.
 **Usage:**
 
 ```jsx
-applyDiff(parent, newVirtualNode)
+applyDiff(parent, newVirtualNode);
 ```
 
 - `parent`: `Node`  
   The parent DOM node where the virtual nodes will be applied.
-  
 - `newVirtualNode`: `VNode | VNode[]`  
   A single virtual node or an array of virtual nodes.
 
@@ -295,9 +283,7 @@ if (!customElements.get("counter-element")) {
 }
 
 // Create and render the CounterElement
-const vdom = (
-  <counter-element title="My Counter" count={0}></counter-element>
-);
+const vdom = <counter-element title="My Counter" count={0}></counter-element>;
 
 const container = document.getElementById("app");
 applyDiff(container, vdom);
@@ -336,49 +322,6 @@ Ensure your `tsconfig.json` is set up to handle JSX and module resolution correc
     "esModuleInterop": true
   }
 }
-```
-
-### Bundling with Webpack
-
-Configure Webpack to handle JSX and TypeScript.
-
-**webpack.config.js:**
-
-```js
-const path = require('path');
-
-module.exports = {
-  entry: './src/index.ts',
-  output: {
-    filename: 'webjsx.bundle.js',
-    path: path.resolve(__dirname, 'dist'),
-  },
-  resolve: {
-    extensions: ['.ts', '.tsx', '.js', '.jsx'],
-  },
-  module: {
-    rules: [
-      {
-        test: /\.(ts|tsx)$/,
-        exclude: /node_modules/,
-        use: 'ts-loader',
-      },
-      {
-        test: /\.(js|jsx)$/,
-        exclude: /node_modules/,
-        use: {
-          loader: 'babel-loader',
-          options: {
-            presets: ['@babel/preset-react'],
-            plugins: [
-              ['@babel/plugin-transform-react-jsx', { 'pragma': 'webjsx.createElement', 'pragmaFrag': 'webjsx.Fragment' }]
-            ]
-          }
-        }
-      }
-    ],
-  },
-};
 ```
 
 ### Running the Build
