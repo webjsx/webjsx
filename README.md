@@ -21,7 +21,7 @@ webjsx fully supports JSX syntax, enabling you to write more readable and mainta
 
 ```jsx
 /** @jsx webjsx.createElement */
-import { createElement, applyDiff, Fragment } from "webjsx";
+import * as webjsx from "webjsx";
 
 // Define a simple virtual DOM element using JSX
 const vdom = (
@@ -44,7 +44,7 @@ webjsx excels at integrating JSX with Web Components, allowing you to define cus
 
 ```jsx
 /** @jsx webjsx.createElement */
-import { createElement, applyDiff, Fragment } from "webjsx";
+import * as webjsx from "webjsx";
 
 // Define a custom Web Component
 class MyElement extends HTMLElement {
@@ -130,7 +130,7 @@ Group multiple elements without introducing additional nodes to the DOM using `F
 
 ```jsx
 /** @jsx webjsx.createElement */
-import { createElement, applyDiff, Fragment } from "webjsx";
+import * as webjsx from "webjsx";
 
 const List = () => {
   return (
