@@ -1,7 +1,3 @@
-Here's the updated README with the remaining issues fixed:
-
----
-
 # webjsx
 
 webjsx is a minimal virtual DOM library for building web applications with JSX and Web Components. It focuses on simplicity, providing just **two core functions**:
