@@ -222,7 +222,6 @@ const vdom = <p class="text">Updated Text</p>;
 applyDiff(appContainer, vdom);
 ```
 
-
 ### `Fragment`
 
 A special type used to group multiple elements without adding extra nodes to the DOM.
@@ -328,6 +327,30 @@ Ensure your `tsconfig.json` is set up to handle JSX and module resolution correc
     "moduleResolution": "node",
     "strict": true,
     "esModuleInterop": true
+  }
+}
+```
+
+## TypeScript: Adding Custom Elements to IntrinsicElements
+
+TypeScript will complain that your Custom Element (such as `<counter-element>`) is not found. TypeScript is only aware of standard HTML elements and doesn't know what `<counter-element>` is.
+
+To fix this you need to declare custom elements in a declarations file, such as custom-elements.d.ts:
+
+```ts
+import "webjsx";
+
+declare module "webjsx" {
+  namespace JSX {
+    interface IntrinsicElements {
+      "counter-element": {
+        count: number;
+      };
+      "sidebar-component": {
+        about: string;
+        email: string;
+      };
+    }
   }
 }
 ```
