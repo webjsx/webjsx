@@ -40,7 +40,15 @@ export function createElement(
   children.forEach(flatten);
 
   if (flatChildren.length > 0) {
-    normalizedProps.children = flatChildren;
+    // Only set children if dangerouslySetInnerHTML is not present
+    if (!normalizedProps.dangerouslySetInnerHTML) {
+      normalizedProps.children = flatChildren;
+    } else {
+      // Optionally, you can warn the user that children are ignored when using dangerouslySetInnerHTML
+      console.warn(
+        "WebJSX: Ignoring children since dangerouslySetInnerHTML is set."
+      );
+    }
   }
 
   return {

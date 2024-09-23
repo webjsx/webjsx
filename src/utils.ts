@@ -13,7 +13,7 @@ export function setAttributes(
   props: { [key: string]: any }
 ): void {
   for (const [key, value] of Object.entries(props)) {
-    if (key === "children" || key === "key") continue;
+    if (key === "children" || key === "key" || key === "dangerouslySetInnerHTML") continue;
 
     if (key.startsWith("on") && typeof value === "function") {
       // Handle event listeners
@@ -37,6 +37,12 @@ export function setAttributes(
       // Assign non-string values as properties
       (el as any)[key] = value;
     }
+  }
+
+  // Handle dangerouslySetInnerHTML separately
+  if ('dangerouslySetInnerHTML' in props) {
+    const html = props.dangerouslySetInnerHTML.__html || '';
+    el.innerHTML = html;
   }
 
   // Handle removing old attributes not present in new props
@@ -86,7 +92,7 @@ export function updateAttributes(
   oldProps: { [key: string]: any }
 ): void {
   for (const [key, value] of Object.entries(newProps)) {
-    if (key === "children" || key === "key") continue;
+    if (key === "children" || key === "key" || key === "dangerouslySetInnerHTML") continue;
 
     if (key.startsWith("on") && typeof value === "function") {
       // Handle event listeners
@@ -114,9 +120,18 @@ export function updateAttributes(
     }
   }
 
+  // Handle dangerouslySetInnerHTML separately
+  if ('dangerouslySetInnerHTML' in newProps) {
+    const html = newProps.dangerouslySetInnerHTML.__html || '';
+    el.innerHTML = html;
+  } else if ('dangerouslySetInnerHTML' in oldProps) {
+    // If previously set and now removed, clear innerHTML
+    el.innerHTML = '';
+  }
+
   // Remove old attributes/properties not present in newProps
   for (const key of Object.keys(oldProps)) {
-    if (!(key in newProps) && key !== "children" && key !== "key") {
+    if (!(key in newProps) && key !== "children" && key !== "key" && key !== "dangerouslySetInnerHTML") {
       if (key.startsWith("on")) {
         // Remove event listeners
         const eventName = key.substring(2).toLowerCase();
@@ -168,8 +183,8 @@ export function createDomNode(vnode: VNode): Node {
     el.setAttribute("data-key", String(vnode.props.key));
   }
 
-  // Handle children
-  if (vnode.props.children) {
+  // Handle children only if dangerouslySetInnerHTML is not present
+  if (vnode.props.children && !vnode.props.dangerouslySetInnerHTML) {
     vnode.props.children.forEach((child) => {
       el.appendChild(createDomNode(child));
     });

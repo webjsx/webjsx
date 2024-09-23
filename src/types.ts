@@ -6,6 +6,7 @@ export interface ElementProps {
   [key: string]: any;
   children?: VNode[];
   key?: string | number;
+  dangerouslySetInnerHTML?: { __html: string };
 }
 
 export interface VElement {

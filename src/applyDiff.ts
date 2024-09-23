@@ -183,11 +183,9 @@ function updateNode(domNode: Node, newVNode: VNode): void {
       domNode.removeAttribute("data-key"); // Change here
     }
 
-    // Handle children only if newProps.children is present
-    const newChildren = newProps.children;
-
-    if (newChildren != null) {
-      diffChildren(domNode, newChildren);
+    // Handle children only if dangerouslySetInnerHTML is NOT present
+    if (!newProps.dangerouslySetInnerHTML && newProps.children != null) {
+      diffChildren(domNode, newProps.children);
     }
   } else {
     // Replace the node
