@@ -1,7 +1,15 @@
+Here's the updated README with the remaining issues fixed:
+
+---
+
 # webjsx
 
-webjsx is a lightweight virtual DOM library for building web applications with JSX and Web Components. It offers a minimal approach to creating, diffing, and rendering virtual nodes for efficient DOM updates.
-webjsx is NOT a framework - it's a library.
+webjsx is a minimal virtual DOM library for building web applications with JSX and Web Components. It focuses on simplicity, providing just **two core functions**:
+
+- **`createElement`**: Creates virtual DOM elements using JSX.
+- **`applyDiff`**: Efficiently applies changes to the real DOM by comparing virtual nodes.
+
+webjsx is not a framework—it's a lightweight library. Its purpose is to handle the essential tasks of creating and updating DOM elements, without additional complexity. For more examples, visit [https://github.com/webjsx/webjsx-examples](https://github.com/webjsx/webjsx-examples).
 
 ## Installation
 
@@ -13,29 +21,28 @@ npm install webjsx
 
 ## Getting Started
 
-The easiest way to get started with webjsx is by setting up a project using your preferred build tools. Below is a basic example of how to create and render elements using webjsx with a focus on JSX and Web Components.
+The following is a basic example of how to use webjsx with its two main functions, `createElement` and `applyDiff`.
 
 ### Creating Elements with JSX
 
-webjsx fully supports JSX syntax, enabling you to write more readable and maintainable code. Use the `createElement` function to create virtual DOM elements and the `applyDiff` function to render them to the real DOM.
+webjsx fully supports JSX syntax, allowing you to create virtual DOM elements using `createElement` and update the real DOM with `applyDiff`.
 
 ```jsx
-/** @jsx webjsx.createElement */
 import * as webjsx from "webjsx";
 
 // Define a simple virtual DOM element using JSX
 const vdom = (
-  <div id="container">
+  <div id="main-container">
     <h1>Welcome to webjsx</h1>
     <p>This is a simple example.</p>
   </div>
 );
 
 // Select the container in the real DOM
-const container = document.getElementById("app");
+const appContainer = document.getElementById("app");
 
 // Apply the virtual DOM diff to update the real DOM
-applyDiff(container, vdom);
+applyDiff(appContainer, vdom);
 ```
 
 ### Defining and Using Web Components with JSX
@@ -43,7 +50,6 @@ applyDiff(container, vdom);
 webjsx excels at integrating JSX with Web Components, allowing you to define custom elements and render them using JSX syntax.
 
 ```jsx
-/** @jsx webjsx.createElement */
 import * as webjsx from "webjsx";
 
 // Define a custom Web Component
@@ -97,8 +103,8 @@ if (!customElements.get("my-element")) {
 const vdom = <my-element title="Initial Title" count={10}></my-element>;
 
 // Render the custom Web Component
-const container = document.getElementById("app");
-applyDiff(container, vdom);
+const appContainer = document.getElementById("app");
+applyDiff(appContainer, vdom);
 ```
 
 ### Handling Events in JSX
@@ -106,7 +112,6 @@ applyDiff(container, vdom);
 Attach event listeners directly within your JSX using standard HTML event attributes.
 
 ```jsx
-/** @jsx webjsx.createElement */
 import { createElement, applyDiff } from "webjsx";
 
 // Define an event handler
@@ -115,40 +120,45 @@ const handleClick = () => {
 };
 
 // Create a button with an onclick event
-const Button = () => {
-  return <button onclick={handleClick}>Click Me</button>;
-};
+const vdom = <button onclick={handleClick}>Click Me</button>;
 
-// Render the Button component
-const container = document.getElementById("app");
-applyDiff(container, <Button />);
+// Render the button
+const appContainer = document.getElementById("app");
+applyDiff(appContainer, vdom);
 ```
 
 ### Using Fragments
 
-Group multiple elements without introducing additional nodes to the DOM using `Fragment`.
+Group multiple elements without introducing additional nodes to the DOM using `<>...</>` syntax.
 
 ```jsx
-/** @jsx webjsx.createElement */
 import * as webjsx from "webjsx";
 
-const List = () => {
-  return (
-    <Fragment>
-      <li>Item 1</li>
-      <li>Item 2</li>
-      <li>Item 3</li>
-    </Fragment>
-  );
-};
+// Define a custom Web Component using fragments
+class MyList extends HTMLElement {
+  connectedCallback() {
+    const vdom = (
+      <ul>
+        <>
+          <li>Item 1</li>
+          <li>Item 2</li>
+          <li>Item 3</li>
+        </>
+      </ul>
+    );
+    applyDiff(this, vdom);
+  }
+}
 
-const container = document.getElementById("app");
-applyDiff(
-  container,
-  <ul>
-    <List />
-  </ul>
-);
+// Register the custom element
+if (!customElements.get("my-list")) {
+  customElements.define("my-list", MyList);
+}
+
+// Render the custom Web Component
+const appContainer = document.getElementById("app");
+const vdom = <my-list></my-list>;
+applyDiff(appContainer, vdom);
 ```
 
 ## API Reference
@@ -157,12 +167,6 @@ applyDiff(
 
 Creates a virtual DOM element.
 
-**Usage:**
-
-```jsx
-createElement(type, props, ...children);
-```
-
 - `type`: `string` | `typeof Fragment`  
   The type of the element, e.g., `'div'`, `'span'`, or `Fragment` for grouping.
 - `props`: `object | null`  
@@ -170,15 +174,44 @@ createElement(type, props, ...children);
 - `children`: `VNode | VNode[]`  
   The child elements or text content.
 
+**Usage (JSX):**
+
+```jsx
+const vdom = (
+  <div id="main-container">
+    <h1>Welcome to webjsx</h1>
+  </div>
+);
+```
+
+**Usage (Non-JSX):**
+
+```js
+const vdom = webjsx.createElement(
+  "div",
+  { id: "main-container" },
+  webjsx.createElement("h1", null, "Welcome to webjsx")
+);
+```
+
 **Example:**
 
 ```jsx
-createElement("div", { id: "main" }, "Hello, World!");
+const vdom = (
+  <div id="main-container">
+    <h1>Hello, World!</h1>
+  </div>
+);
 ```
 
 ### `applyDiff`
 
 Applies the differences between the new virtual node(s) and the existing DOM.
+
+- `parent`: `Node`  
+  The parent DOM node where the virtual nodes will be applied.
+- `newVirtualNode`: `VNode | VNode[]`  
+  A single virtual node or an array of virtual nodes.
 
 **Usage:**
 
@@ -186,17 +219,13 @@ Applies the differences between the new virtual node(s) and the existing DOM.
 applyDiff(parent, newVirtualNode);
 ```
 
-- `parent`: `Node`  
-  The parent DOM node where the virtual nodes will be applied.
-- `newVirtualNode`: `VNode | VNode[]`  
-  A single virtual node or an array of virtual nodes.
-
 **Example:**
 
 ```jsx
-const vdom = createElement("p", { class: "text" }, "Updated Text");
-applyDiff(container, vdom);
+const vdom = <p class="text">Updated Text</p>;
+applyDiff(appContainer, vdom);
 ```
+
 
 ### `Fragment`
 
@@ -205,29 +234,28 @@ A special type used to group multiple elements without adding extra nodes to the
 **Usage:**
 
 ```jsx
-<Fragment>
-  <Element1 />
-  <Element2 />
-</Fragment>
+<>
+  <div>First</div>
+  <div>Second</div>
+</>
 ```
 
 **Example:**
 
 ```jsx
-<Fragment>
-  <span>First</span>
-  <span>Second</span>
-</Fragment>
+<>
+  <span>Item 1</span>
+  <span>Item 2</span>
+</>
 ```
 
 ## Creating Web Components with JSX
 
-webjsx simplifies the creation and rendering of Web Components using JSX. By leveraging the power of JSX, you can define complex custom elements with ease.
+webjsx simplifies the creation and rendering of Web Components using JSX.
 
 ### Example: Creating a Counter Web Component
 
 ```jsx
-/** @jsx webjsx.createElement */
 import { createElement, applyDiff } from "webjsx";
 
 // Define the custom Web Component
@@ -285,25 +313,9 @@ if (!customElements.get("counter-element")) {
 // Create and render the CounterElement
 const vdom = <counter-element title="My Counter" count={0}></counter-element>;
 
-const container = document.getElementById("app");
-applyDiff(container, vdom);
+const appContainer = document.getElementById("app");
+applyDiff(appContainer, vdom);
 ```
-
-## Testing
-
-webjsx comes with a comprehensive test suite to ensure reliability and correctness. The tests cover various aspects, including basic rendering, element management, event handling, fragments, keys handling, multiple updates, props handling, and integration with custom Web Components.
-
-To run the tests:
-
-```sh
-npm test
-```
-
-Ensure that all tests pass before deploying your application.
-
-## Building
-
-webjsx is written in TypeScript and can be built using standard TypeScript and bundling tools.
 
 ### TypeScript Configuration
 
@@ -324,24 +336,6 @@ Ensure your `tsconfig.json` is set up to handle JSX and module resolution correc
 }
 ```
 
-### Running the Build
-
-```sh
-npm run build
-```
-
-Ensure that your build scripts are correctly defined in `package.json`.
-
-## Example Projects
-
-Explore these example projects to see webjsx in action:
-
-- **Basic Rendering:** Demonstrates simple element creation and rendering.
-- **Event Handling:** Shows how to attach and manage event listeners.
-- **Fragments and Keys:** Illustrates grouping elements and optimizing list rendering.
-- **Custom Web Components:** Integrates custom elements with webjsx.
-- **JSX Syntax with Web Components:** Focuses on rendering Web Components using JSX.
-
 ## Contributing
 
 Contributions are welcome! Whether it's reporting bugs, suggesting features, or submitting pull requests, your help is appreciated.
@@ -354,6 +348,12 @@ Contributions are welcome! Whether it's reporting bugs, suggesting features, or 
 
 Please ensure that your contributions adhere to the project's coding standards and include appropriate tests.
 
+To run the tests:
+
+```sh
+npm test
+```
+
 ## License
 
 webjsx is open-source software [licensed as MIT](LICENSE).
@@ -361,3 +361,7 @@ webjsx is open-source software [licensed as MIT](LICENSE).
 ## Support
 
 If you encounter any issues or have questions, feel free to open an issue on [GitHub](https://github.com/webjsx/webjsx/issues) or reach out via Twitter [@jeswin](https://twitter.com/jeswin).
+
+---
+
+This version now uses only web components and avoids any React-like component examples, and the `createElement` and `applyDiff` API examples have both JSX and non-JSX versions where appropriate.
