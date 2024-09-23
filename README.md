@@ -1,11 +1,11 @@
 # webjsx
 
-webjsx is a minimal virtual DOM library for building web applications with JSX and Web Components. It focuses on simplicity, providing just **two core functions**:
+A minimal library for building web applications with JSX and Web Components. It focuses on simplicity, providing just **two core functions**:
 
 - **`createElement`**: Creates virtual DOM elements using JSX.
 - **`applyDiff`**: Efficiently applies changes to the real DOM by comparing virtual nodes.
 
-webjsx is not a framework—it's a lightweight library. Its purpose is to handle the essential tasks of creating and updating DOM elements, without additional complexity. For more examples, visit [https://github.com/webjsx/webjsx-examples](https://github.com/webjsx/webjsx-examples).
+For more examples, visit [https://github.com/webjsx/webjsx-examples](https://github.com/webjsx/webjsx-examples).
 
 ## Installation
 
@@ -159,18 +159,11 @@ applyDiff(appContainer, vdom);
 
 ## API Reference
 
-### `createElement`
+### `createElement(tag, props, children)`
 
 Creates a virtual DOM element.
 
-- `type`: `string` | `typeof Fragment`  
-  The type of the element, e.g., `'div'`, `'span'`, or `Fragment` for grouping.
-- `props`: `object | null`  
-  An object containing attributes and properties for the element.
-- `children`: `VNode | VNode[]`  
-  The child elements or text content.
-
-**Usage (JSX):**
+**JSX calls createElement implicitly:**
 
 ```jsx
 const vdom = (
@@ -190,32 +183,11 @@ const vdom = webjsx.createElement(
 );
 ```
 
-**Example:**
-
-```jsx
-const vdom = (
-  <div id="main-container">
-    <h1>Hello, World!</h1>
-  </div>
-);
-```
-
-### `applyDiff`
+### `applyDiff(parent, newVirtualNode)`
 
 Applies the differences between the new virtual node(s) and the existing DOM.
 
-- `parent`: `Node`  
-  The parent DOM node where the virtual nodes will be applied.
-- `newVirtualNode`: `VNode | VNode[]`  
-  A single virtual node or an array of virtual nodes.
-
 **Usage:**
-
-```jsx
-applyDiff(parent, newVirtualNode);
-```
-
-**Example:**
 
 ```jsx
 const vdom = <p class="text">Updated Text</p>;
@@ -230,25 +202,12 @@ A special type used to group multiple elements without adding extra nodes to the
 
 ```jsx
 <>
-  <div>First</div>
-  <div>Second</div>
-</>
-```
-
-**Example:**
-
-```jsx
-<>
   <span>Item 1</span>
   <span>Item 2</span>
 </>
 ```
 
-## Creating Web Components with JSX
-
-webjsx simplifies the creation and rendering of Web Components using JSX.
-
-### Example: Creating a Counter Web Component
+## Example: Creating a Counter Web Component
 
 ```jsx
 import { createElement, applyDiff } from "webjsx";
@@ -312,7 +271,7 @@ const appContainer = document.getElementById("app");
 applyDiff(appContainer, vdom);
 ```
 
-### TypeScript Configuration
+## TypeScript Configuration
 
 Ensure your `tsconfig.json` is set up to handle JSX and module resolution correctly.
 
