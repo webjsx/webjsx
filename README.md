@@ -271,7 +271,9 @@ const appContainer = document.getElementById("app");
 applyDiff(appContainer, vdom);
 ```
 
-## TypeScript Configuration
+## TypeScript 
+
+### tsconfig.json
 
 Ensure your `tsconfig.json` is set up to handle JSX and module resolution correctly.
 
@@ -290,7 +292,7 @@ Ensure your `tsconfig.json` is set up to handle JSX and module resolution correc
 }
 ```
 
-## TypeScript: Adding Custom Elements to IntrinsicElements
+### Adding Custom Elements to IntrinsicElements (TypeScript)
 
 TypeScript will complain that your Custom Element (such as `<counter-element>`) is not found. TypeScript is only aware of standard HTML elements and doesn't know what `<counter-element>` is.
 
