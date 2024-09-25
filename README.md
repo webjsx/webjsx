@@ -271,30 +271,26 @@ const appContainer = document.getElementById("app");
 applyDiff(appContainer, vdom);
 ```
 
-## TypeScript 
+## TypeScript
 
 ### tsconfig.json
 
-Ensure your `tsconfig.json` is set up to handle JSX and module resolution correctly.
+Ensure your `tsconfig.json` is set up to handle JSX.
 
 ```json
 {
   "compilerOptions": {
+    //...
     "jsx": "react",
     "jsxFactory": "webjsx.createElement",
-    "jsxFragmentFactory": "webjsx.Fragment",
-    "target": "es6",
-    "module": "esnext",
-    "moduleResolution": "node",
-    "strict": true,
-    "esModuleInterop": true
+    "jsxFragmentFactory": "webjsx.Fragment"
   }
 }
 ```
 
 ### Adding Custom Elements to IntrinsicElements (TypeScript)
 
-TypeScript will complain that your Custom Element (such as `<counter-element>`) is not found. TypeScript is only aware of standard HTML elements and doesn't know what `<counter-element>` is.
+TypeScript will complain that your Custom Element (such as `<counter-element>`) is not found. That's because it is only aware of standard HTML elements and doesn't know what `<counter-element>` is.
 
 To fix this you need to declare custom elements in a declarations file, such as custom-elements.d.ts:
 
@@ -316,16 +312,40 @@ declare module "webjsx" {
 }
 ```
 
+## Bundling
+
+You can bundle with your favorite bundler, but most apps don't need to.
+
+You can load modules directly on the web page these days:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>WebJsx Test</title>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "webjsx": "../node_modules/webjsx/dist/index.js"
+        }
+      }
+    </script>
+    <!-- This is your entry point -->
+    <script type="module" src="../dist/index.js"></script>
+  </head>
+
+  <body>
+    <div id="app"></div>
+  </body>
+</html>
+```
+
+You can see more examples in the Code Sandbox.
+
 ## Contributing
 
 Contributions are welcome! Whether it's reporting bugs, suggesting features, or submitting pull requests, your help is appreciated.
-
-1. Fork the repository.
-2. Create a new branch: `git checkout -b feature-name`.
-3. Commit your changes: `git commit -m 'Add new feature'`.
-4. Push to the branch: `git push origin feature-name`.
-5. Open a pull request.
-
 Please ensure that your contributions adhere to the project's coding standards and include appropriate tests.
 
 To run the tests:
@@ -341,7 +361,3 @@ webjsx is open-source software [licensed as MIT](LICENSE).
 ## Support
 
 If you encounter any issues or have questions, feel free to open an issue on [GitHub](https://github.com/webjsx/webjsx/issues) or reach out via Twitter [@jeswin](https://twitter.com/jeswin).
-
----
-
-This version now uses only web components and avoids any React-like component examples, and the `createElement` and `applyDiff` API examples have both JSX and non-JSX versions where appropriate.
