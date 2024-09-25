@@ -5,7 +5,12 @@ A minimal library for building web applications with JSX and Web Components. It 
 - **`createElement`**: Creates virtual DOM elements using JSX.
 - **`applyDiff`**: Efficiently applies changes to the real DOM by comparing virtual nodes.
 
-For more examples, visit [https://github.com/webjsx/webjsx-examples](https://github.com/webjsx/webjsx-examples).
+## Examples
+
+There are a few [examples on StackBlitz](https://stackblitz.com/@jeswin/collections/webjsx). If you're impatient, that's probably the easiest way to get started.
+- [Todo List](https://stackblitz.com/edit/webjsx-todos)
+- [Rotten Tomatoes Mockup](https://stackblitz.com/edit/webjsx-tomatoes)
+- [Boring Dashboard](https://stackblitz.com/edit/webjsx-tomatoes)
 
 ## Installation
 
