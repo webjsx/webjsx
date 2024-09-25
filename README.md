@@ -139,13 +139,15 @@ import * as webjsx from "webjsx";
 class MyList extends HTMLElement {
   connectedCallback() {
     const vdom = (
-      <ul>
-        <>
+      <>
+        <h2>My List</h2>
+        <ul>
           <li>Item 1</li>
           <li>Item 2</li>
           <li>Item 3</li>
-        </>
-      </ul>
+        </ul>
+        <footer>Total items: 3</footer>
+      </>
     );
     applyDiff(this, vdom);
   }
