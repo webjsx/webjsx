@@ -7,7 +7,7 @@ A minimal library for building web applications with JSX and Web Components. It 
 
 ## Examples
 
-There are a few [examples on StackBlitz](https://stackblitz.com/@jeswin/collections/webjsx). If you're impatient, that's probably the easiest way to get started.
+There are a few examples on [StackBlitz](https://stackblitz.com/@jeswin/collections/webjsx). If you're impatient (like me), that's probably the easiest way to get started.
 - [Todo List](https://stackblitz.com/edit/webjsx-todos)
 - [Rotten Tomatoes Mockup](https://stackblitz.com/edit/webjsx-tomatoes)
 - [Boring Dashboard](https://stackblitz.com/edit/webjsx-tomatoes)
@@ -48,7 +48,7 @@ applyDiff(appContainer, vdom);
 
 ### Defining and Using Web Components with JSX
 
-webjsx excels at integrating JSX with Web Components, allowing you to define custom elements and render them using JSX syntax.
+Let's write a simple Custom Element with JSX.
 
 ```jsx
 import * as webjsx from "webjsx";
@@ -346,7 +346,7 @@ You can load modules directly on the web page these days:
 </html>
 ```
 
-You can see more examples in the Code Sandbox.
+You can see more examples in the StackBlitz.
 
 ## Contributing
 
