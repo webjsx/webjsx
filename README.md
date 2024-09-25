@@ -1,4 +1,4 @@
-# webjsx
+# WebJSX
 
 A minimal library for building web applications with JSX and Web Components. It focuses on simplicity, providing just **two core functions**:
 
@@ -26,7 +26,7 @@ The following is a basic example of how to use webjsx with its two main function
 
 ### Creating Elements with JSX
 
-webjsx fully supports JSX syntax, allowing you to create virtual DOM elements using `createElement` and update the real DOM with `applyDiff`.
+WebJSX fully supports JSX syntax, allowing you to create virtual DOM elements using `createElement` and update the real DOM with `applyDiff`.
 
 ```jsx
 import * as webjsx from "webjsx";
@@ -361,7 +361,7 @@ npm test
 
 ## License
 
-webjsx is open-source software [licensed as MIT](LICENSE).
+WebJSX is open-source software [licensed as MIT](https://raw.githubusercontent.com/webjsx/webjsx/refs/heads/main/LICENSE).
 
 ## Support
 
