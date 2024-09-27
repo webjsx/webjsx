@@ -1,15 +1,6 @@
 import { Fragment, VElement, VNode } from "./types.js";
 
 /**
- * Overloads for createElement function.
- */
-export function createElement(
-  type: string | typeof Fragment,
-  props: { [key: string]: any } | null,
-  ...children: any[]
-): VElement;
-
-/**
  * Implementation of createElement function.
  */
 export function createElement(
