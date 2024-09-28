@@ -171,7 +171,6 @@ function updateNode(domNode: Node, newVNode: VNode): void {
     const oldProps = (domNode as any).__webjsx_props || {};
     const newProps = newVNode.props || {};
     updateAttributes(domNode, newProps, oldProps);
-    (domNode as any).__webjsx_props = newProps;
 
     // Handle the key attribute (use data-key now)
     if (isVElement(newVNode) && newVNode.props.key != null) {

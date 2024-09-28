@@ -12,8 +12,19 @@ export function setAttributes(
   el: HTMLElement,
   props: { [key: string]: any }
 ): void {
+  let isRenderingSuspended = false;
+  if ((el as any).__webjsx_suspendRendering) {
+    isRenderingSuspended = true;
+    (el as any).__webjsx_suspendRendering(); // Call the suspension function
+  }
+
   for (const [key, value] of Object.entries(props)) {
-    if (key === "children" || key === "key" || key === "dangerouslySetInnerHTML") continue;
+    if (
+      key === "children" ||
+      key === "key" ||
+      key === "dangerouslySetInnerHTML"
+    )
+      continue;
 
     if (key.startsWith("on") && typeof value === "function") {
       // Handle event listeners
@@ -40,8 +51,8 @@ export function setAttributes(
   }
 
   // Handle dangerouslySetInnerHTML separately
-  if ('dangerouslySetInnerHTML' in props) {
-    const html = props.dangerouslySetInnerHTML.__html || '';
+  if ("dangerouslySetInnerHTML" in props) {
+    const html = props.dangerouslySetInnerHTML.__html || "";
     el.innerHTML = html;
   }
 
@@ -77,6 +88,10 @@ export function setAttributes(
 
   // Store the current props for future updates
   (el as any).__webjsx_props = props;
+
+  if (isRenderingSuspended) {
+    (el as any).__webjsx_resumeRendering();
+  }
 }
 
 /**
@@ -91,8 +106,19 @@ export function updateAttributes(
   newProps: { [key: string]: any },
   oldProps: { [key: string]: any }
 ): void {
+  let isRenderingSuspended = false;
+  if ((el as any).__webjsx_suspendRendering) {
+    isRenderingSuspended = true;
+    (el as any).__webjsx_suspendRendering(); // Call the suspension function
+  }
+
   for (const [key, value] of Object.entries(newProps)) {
-    if (key === "children" || key === "key" || key === "dangerouslySetInnerHTML") continue;
+    if (
+      key === "children" ||
+      key === "key" ||
+      key === "dangerouslySetInnerHTML"
+    )
+      continue;
 
     if (key.startsWith("on") && typeof value === "function") {
       // Handle event listeners
@@ -121,17 +147,22 @@ export function updateAttributes(
   }
 
   // Handle dangerouslySetInnerHTML separately
-  if ('dangerouslySetInnerHTML' in newProps) {
-    const html = newProps.dangerouslySetInnerHTML.__html || '';
+  if ("dangerouslySetInnerHTML" in newProps) {
+    const html = newProps.dangerouslySetInnerHTML.__html || "";
     el.innerHTML = html;
-  } else if ('dangerouslySetInnerHTML' in oldProps) {
+  } else if ("dangerouslySetInnerHTML" in oldProps) {
     // If previously set and now removed, clear innerHTML
-    el.innerHTML = '';
+    el.innerHTML = "";
   }
 
   // Remove old attributes/properties not present in newProps
   for (const key of Object.keys(oldProps)) {
-    if (!(key in newProps) && key !== "children" && key !== "key" && key !== "dangerouslySetInnerHTML") {
+    if (
+      !(key in newProps) &&
+      key !== "children" &&
+      key !== "key" &&
+      key !== "dangerouslySetInnerHTML"
+    ) {
       if (key.startsWith("on")) {
         // Remove event listeners
         const eventName = key.substring(2).toLowerCase();
@@ -148,6 +179,13 @@ export function updateAttributes(
         el.removeAttribute(key);
       }
     }
+  }
+
+  // Store the current props for future updates
+  (el as any).__webjsx_props = newProps;
+
+  if (isRenderingSuspended) {
+    (el as any).__webjsx_resumeRendering();
   }
 }
 
