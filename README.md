@@ -23,10 +23,6 @@ npm install webjsx
 
 ## Getting Started
 
-The following is a basic example of how to use webjsx with its two main functions, `createElement` and `applyDiff`.
-
-### Creating Elements with JSX
-
 WebJSX fully supports JSX syntax, allowing you to create virtual DOM elements using `createElement` and update the real DOM with `applyDiff`.
 
 ```jsx
