@@ -281,7 +281,7 @@ webjsx.applyDiff(appContainer, vdom);
 
 ## Advanced: Rendering Suspension
 
-If a class defines the **webjsx_suspendRendering and **webjsx_resumeRendering methods, WebJSX will call the former before setting properties and the latter after all properties are set. This allows you to suspend rendering while multiple properties are being set, which would otherwise result in multiple re-renders.
+If a class defines the `webjsx_suspendRendering` and `webjsx_resumeRendering` methods, WebJSX will call the former before setting properties and the latter after all properties are set. This allows you to suspend rendering while multiple properties are being set, which would otherwise result in multiple re-renders.
 
 In the following example, for the JSX markup <my-element prop1={10} prop2={20} />, the render() method is called only once after both properties are set:
 
