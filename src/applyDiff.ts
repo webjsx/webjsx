@@ -1,5 +1,6 @@
+import { createDomNode } from "./createDomNode.js";
 import { VNode, VElement, Fragment } from "./types.js";
-import { createDomNode, updateAttributes } from "./utils.js";
+import { updateAttributes } from "./utils.js";
 
 /**
  * Applies the differences between the new virtual node(s) and the existing DOM.

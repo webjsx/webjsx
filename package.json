@@ -1,6 +1,6 @@
 {
   "name": "webjsx",
-  "version": "0.0.18",
+  "version": "0.0.19",
   "main": "./dist/index.js",
   "type": "module",
   "author": "Jeswin Kumar<jeswinpk@agilehead.com>",
