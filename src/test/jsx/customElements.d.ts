@@ -1,4 +1,4 @@
-import * as webjsx from "../../index.ts";
+import "../../index.ts";
 
 declare module "../../index.js" {
   namespace JSX {
