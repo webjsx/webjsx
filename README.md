@@ -1,6 +1,6 @@
 # WebJSX
 
-A minimal library for building web applications with JSX and Web Components. It focuses on simplicity, providing just **core functions**:
+A minimal library for building web applications with JSX and Web Components. It focuses on simplicity, providing just **two core functions**:
 
 - **`createElement`**: Creates virtual DOM elements using JSX.
 - **`applyDiff`**: Efficiently applies changes to the real DOM by comparing virtual nodes.
