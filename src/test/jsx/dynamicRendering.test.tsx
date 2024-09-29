@@ -4,14 +4,6 @@ import { JSDOM } from "jsdom";
 import { applyDiff } from "../../applyDiff.js";
 import * as webjsx from "../../index.js";
 
-declare module "../../index.js" {
-  namespace JSX {
-    interface IntrinsicElements {
-      // Include any custom elements used in this test file, if any
-    }
-  }
-}
-
 describe("JSX Syntax - Dynamic Rendering", () => {
   let dom: JSDOM;
   let document: Document;

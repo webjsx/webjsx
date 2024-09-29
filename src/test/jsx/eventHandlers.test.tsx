@@ -4,16 +4,6 @@ import { applyDiff } from "../../applyDiff.js";
 import * as webjsx from "../../index.js";
 import "../../test/setup.js";
 
-declare module "../../index.js" {
-  namespace JSX {
-    interface IntrinsicElements {
-      "clickable-element": {
-        onclick?: (event: Event) => void;
-      };
-    }
-  }
-}
-
 describe("JSX Syntax - Event Handlers", () => {
   let dom: JSDOM;
   let document: Document;

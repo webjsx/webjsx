@@ -4,22 +4,6 @@ import { applyDiff } from "../../applyDiff.js";
 import * as webjsx from "../../index.js";
 import "../../test/setup.js";
 
-declare module "../../index.js" {
-  namespace JSX {
-    interface IntrinsicElements {
-      "parent-element": {
-        title?: string;
-        count?: number;
-        children?: any;
-      };
-      "nested-element": {
-        label?: string;
-        value?: string;
-      };
-    }
-  }
-}
-
 describe("JSX Syntax - Nested Elements", () => {
   let dom: JSDOM;
   let document: Document;

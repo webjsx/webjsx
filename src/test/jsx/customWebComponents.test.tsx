@@ -4,33 +4,6 @@ import { applyDiff } from "../../applyDiff.js";
 import * as webjsx from "../../index.js";
 import "../../test/setup.js";
 
-declare module "../../index.js" {
-  namespace JSX {
-    interface IntrinsicElements {
-      "my-jsx-element": {
-        title?: string;
-        count?: number;
-      };
-      "nested-element": {
-        label?: string;
-        value?: string;
-      };
-      "parent-element": {
-        title?: string;
-        count?: number;
-        children?: any;
-      };
-      "clickable-element": {
-        onclick?: (event: Event) => void;
-      };
-      "dynamic-render-element": {
-        title?: string;
-        count?: number;
-      };
-    }
-  }
-}
-
 describe("JSX Syntax - Custom Web Components", () => {
   let dom: JSDOM;
   let document: Document;

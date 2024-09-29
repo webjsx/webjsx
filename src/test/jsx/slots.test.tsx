@@ -4,18 +4,6 @@ import { applyDiff } from "../../applyDiff.js";
 import * as webjsx from "../../index.js";
 import "../../test/setup.js";
 
-declare module "../../index.js" {
-  namespace JSX {
-    interface IntrinsicElements {
-      "my-slot-element": {
-        title?: string;
-        children?: any;
-      };
-      "named-slot-element": {};
-    }
-  }
-}
-
 describe("JSX Syntax - Web Components with Slots", () => {
   let dom: JSDOM;
   let document: Document;
