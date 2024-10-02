@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { JSDOM } from "jsdom";
 import { applyDiff } from "../../applyDiff.js";
 import * as webjsx from "../../index.js";
-import "../../test/setup.js";
+import "../setup.js";
 
 describe("JSX Syntax - Custom Web Components", () => {
   let dom: JSDOM;

@@ -1,4 +1,4 @@
-import "../../test/setup.js";
+import "../setup.js";
 import { expect } from "chai";
 import { applyDiff } from "../../applyDiff.js";
 import { createElement, Fragment } from "../../index.js";

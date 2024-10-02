@@ -1,4 +1,4 @@
-import "../../test/setup.js";
+import "../setup.js";
 import { expect } from "chai";
 import { createElement } from "../../index.js";
 import { VElement } from "../../types.js";
