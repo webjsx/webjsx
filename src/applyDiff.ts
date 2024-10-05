@@ -177,7 +177,6 @@ function updateNode(domNode: Node, newVNode: VNode): void {
     }
   } else {
     releaseRef(domNode);
-
     const newDomNode = createDomNode(newVNode);
 
     if (isVElement(newVNode) && newVNode.props.key != null) {
