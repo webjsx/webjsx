@@ -66,7 +66,6 @@ function diffChildren(parent: Node, newVNodes: VNode[]): void {
     const key = (node as any).__webjsx_key;
     if (key != null && !newKeys.includes(key)) {
       parent.removeChild(node);
-      releaseRef(node);
     }
   });
 
@@ -111,7 +110,6 @@ function diffChildren(parent: Node, newVNodes: VNode[]): void {
   if (newUnkeyed.length < existingUnkeyed.length) {
     for (let i = newUnkeyed.length; i < existingUnkeyed.length; i++) {
       parent.removeChild(existingUnkeyed[i]);
-      releaseRef(existingUnkeyed[i]);
     }
   }
 }
@@ -176,7 +174,6 @@ function updateNode(domNode: Node, newVNode: VNode): void {
       diffChildren(domNode, newProps.children);
     }
   } else {
-    releaseRef(domNode);
     const newDomNode = createDomNode(newVNode);
 
     if (isVElement(newVNode) && newVNode.props.key != null) {

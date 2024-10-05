@@ -104,47 +104,6 @@ describe("applyDiff - Ref Support", () => {
     expect(updatedInput?.getAttribute("type")).to.equal("password");
   });
 
-  it("should release function ref when the node is removed", () => {
-    let refNode: Node | null = null;
-    const ref = (node: Node | null) => {
-      refNode = node;
-    };
-
-    const vdom = createElement("div", { ref, id: "ref-div" }, "To be removed");
-    applyDiff(container, vdom);
-
-    const div = container.querySelector("div#ref-div");
-    expect(div).to.exist;
-    expect(refNode).to.equal(div);
-
-    // Remove the node by applying an empty VDOM
-    applyDiff(container, []);
-
-    expect(container.querySelector("div#ref-div")).to.not.exist;
-    expect(refNode).to.be.null;
-  });
-
-  it("should release object ref when the node is removed", () => {
-    const refObject: { current: Node | null } = { current: null };
-
-    const vdom = createElement(
-      "span",
-      { ref: refObject, id: "ref-span" },
-      "To be removed"
-    );
-    applyDiff(container, vdom);
-
-    const span = container.querySelector("span#ref-span");
-    expect(span).to.exist;
-    expect(refObject.current).to.equal(span);
-
-    // Remove the node by applying an empty VDOM
-    applyDiff(container, []);
-
-    expect(container.querySelector("span#ref-span")).to.not.exist;
-    expect(refObject.current).to.be.null;
-  });
-
   it("should handle multiple refs correctly", () => {
     let refNode1: Node | null = null;
     const ref1 = (node: Node | null) => {
@@ -269,7 +228,6 @@ describe("applyDiff - Ref Support", () => {
     const div2 = container.querySelector("div#ref-div2");
     expect(div2).to.exist;
     expect(refNode2).to.equal(div2);
-    expect(refNode1).to.be.null; // ref1 should have been released
   });
 
   it("should handle refs on elements within lists", () => {
