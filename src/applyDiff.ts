@@ -1,4 +1,5 @@
-import { createDomNode } from "./createDomNode.js";
+import { HTML_NAMESPACE } from "./constants.js";
+import { createNode } from "./createNode.js";
 import { VNode, VElement, Fragment } from "./types.js";
 import { updateAttributes } from "./utils.js";
 
@@ -87,7 +88,7 @@ function diffChildren(parent: Node, newVNodes: VNode[]): void {
       }
       updateNode(existingNode, newVNode);
     } else {
-      const newDomNode = createDomNode(newVNode);
+      const newDomNode = createNode(newVNode, getNamespaceURI(parent));
       if (isVElement(newVNode) && newVNode.props.key != null) {
         (newDomNode as any).__webjsx_key = newVNode.props.key;
         (newDomNode as HTMLElement).setAttribute(
@@ -142,7 +143,7 @@ function updateNode(domNode: Node, newVNode: VNode): void {
       const fragment = document.createDocumentFragment();
       if (newVNode.props.children) {
         newVNode.props.children.forEach((child) => {
-          fragment.appendChild(createDomNode(child));
+          fragment.appendChild(createNode(child, undefined));
         });
       }
       domNode.parentNode?.replaceChild(fragment, domNode);
@@ -174,7 +175,10 @@ function updateNode(domNode: Node, newVNode: VNode): void {
       diffChildren(domNode, newProps.children);
     }
   } else {
-    const newDomNode = createDomNode(newVNode);
+    const newDomNode = createNode(
+      newVNode,
+      domNode.parentNode ? getNamespaceURI(domNode.parentNode) : undefined
+    );
 
     if (isVElement(newVNode) && newVNode.props.key != null) {
       (newDomNode as any).__webjsx_key = newVNode.props.key;
@@ -251,4 +255,10 @@ function isVElementWithKey(
   vnode: VNode
 ): vnode is VElement & { props: { key: string | number } } {
   return isVElement(vnode) && vnode.props.key != null;
+}
+
+function getNamespaceURI(node: Node): string | undefined {
+  return node instanceof Element && node.namespaceURI !== HTML_NAMESPACE
+    ? node.namespaceURI ?? undefined
+    : undefined;
 }
