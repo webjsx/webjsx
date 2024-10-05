@@ -2,6 +2,8 @@ export const Fragment = Symbol("Fragment");
 
 export type Primitive = string | number | boolean;
 
+export type Ref = ((node: Node | null) => void) | { current: Node | null };
+
 export interface ElementProps {
   [key: string]: any;
   children?: VNode[];
