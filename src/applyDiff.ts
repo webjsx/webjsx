@@ -46,10 +46,8 @@ function isFragment(vnode: VNode): vnode is VElement {
  * @param newVNodes An array of new virtual nodes.
  */
 function diffChildren(parent: Node, newVNodes: VNode[]): void {
-  // Step 1: Flatten the newVNodes by replacing Fragments with their children
   const flattenedVNodes = flattenVNodes(newVNodes);
 
-  // Step 2: Collect existing child nodes
   const existingNodes = Array.from(parent.childNodes);
   const keyedMap = new Map<string | number, Node>();
 
@@ -61,7 +59,6 @@ function diffChildren(parent: Node, newVNodes: VNode[]): void {
     }
   });
 
-  // Step 3: Remove old keyed nodes not present in newVNodes
   const newKeys = flattenedVNodes
     .filter(isVElementWithKey)
     .map((vnode) => vnode.props.key);
@@ -69,10 +66,10 @@ function diffChildren(parent: Node, newVNodes: VNode[]): void {
     const key = (node as any).__webjsx_key;
     if (key != null && !newKeys.includes(key)) {
       parent.removeChild(node);
+      releaseRef(node);
     }
   });
 
-  // Step 4: Handle insertions and updates
   flattenedVNodes.forEach((newVNode, i) => {
     const newKey = isVElement(newVNode) ? newVNode.props.key : undefined;
     let existingNode: Node | null = null;
@@ -86,17 +83,12 @@ function diffChildren(parent: Node, newVNodes: VNode[]): void {
     }
 
     if (existingNode) {
-      // Move the node if it's not in the correct position
       if (existingNode !== parent.childNodes[i]) {
         parent.insertBefore(existingNode, parent.childNodes[i] || null);
       }
-      // Update the node
       updateNode(existingNode, newVNode);
     } else {
-      // Create and insert the new node
       const newDomNode = createDomNode(newVNode);
-
-      // Assign key attributes if present
       if (isVElement(newVNode) && newVNode.props.key != null) {
         (newDomNode as any).__webjsx_key = newVNode.props.key;
         (newDomNode as HTMLElement).setAttribute(
@@ -104,13 +96,10 @@ function diffChildren(parent: Node, newVNodes: VNode[]): void {
           String(newVNode.props.key)
         );
       }
-
       parent.insertBefore(newDomNode, parent.childNodes[i] || null);
     }
   });
 
-  // Step 5: Remove excess unkeyed nodes
-  // Re-fetch child nodes after insertions/removals
   const updatedChildNodes = Array.from(parent.childNodes);
   const newUnkeyed = flattenedVNodes.filter(
     (vnode) => !isVElementWithKey(vnode)
@@ -122,6 +111,7 @@ function diffChildren(parent: Node, newVNodes: VNode[]): void {
   if (newUnkeyed.length < existingUnkeyed.length) {
     for (let i = newUnkeyed.length; i < existingUnkeyed.length; i++) {
       parent.removeChild(existingUnkeyed[i]);
+      releaseRef(existingUnkeyed[i]);
     }
   }
 }
@@ -148,8 +138,6 @@ function updateNode(domNode: Node, newVNode: VNode): void {
   }
 
   if (newVNode.type === Fragment) {
-    // Since we've flattened Fragments in diffChildren, this block should rarely execute.
-    // However, it's kept as a safeguard.
     if (domNode instanceof DocumentFragment) {
       diffChildren(domNode, newVNode.props.children || []);
     } else {
@@ -168,30 +156,30 @@ function updateNode(domNode: Node, newVNode: VNode): void {
     domNode instanceof HTMLElement &&
     domNode.tagName.toLowerCase() === (newVNode.type as string).toLowerCase()
   ) {
-    // Update attributes
     const oldProps = (domNode as any).__webjsx_props || {};
     const newProps = newVNode.props || {};
     updateAttributes(domNode, newProps, oldProps);
 
-    // Handle the key attribute (use data-key now)
     if (isVElement(newVNode) && newVNode.props.key != null) {
       (domNode as any).__webjsx_key = newVNode.props.key;
-      domNode.setAttribute("data-key", String(newVNode.props.key)); // Change here
+      domNode.setAttribute("data-key", String(newVNode.props.key));
     } else {
-      // Remove the key if it doesn't exist in newProps
       delete (domNode as any).__webjsx_key;
-      domNode.removeAttribute("data-key"); // Change here
+      domNode.removeAttribute("data-key");
     }
 
-    // Handle children only if dangerouslySetInnerHTML is NOT present
+    if (newProps.ref) {
+      assignRef(domNode, newProps.ref);
+    }
+
     if (!newProps.dangerouslySetInnerHTML && newProps.children != null) {
       diffChildren(domNode, newProps.children);
     }
   } else {
-    // Replace the node
+    releaseRef(domNode);
+
     const newDomNode = createDomNode(newVNode);
 
-    // Assign key attributes if present (use data-key now)
     if (isVElement(newVNode) && newVNode.props.key != null) {
       (newDomNode as any).__webjsx_key = newVNode.props.key;
       (newDomNode as HTMLElement).setAttribute(
@@ -200,7 +188,52 @@ function updateNode(domNode: Node, newVNode: VNode): void {
       );
     }
 
+    if (isVElement(newVNode) && newVNode.props.ref) {
+      assignRef(newDomNode, newVNode.props.ref);
+    }
+
     domNode.parentNode?.replaceChild(newDomNode, domNode);
+  }
+}
+
+/**
+ * Assigns a ref to a node.
+ * @param node The DOM node.
+ * @param ref The ref to assign.
+ */
+function assignRef(node: Node, ref: any): void {
+  const currentRef = (node as any).__webjsx_assignedRef;
+
+  // Only assign the ref if it's different
+  if (currentRef !== ref) {
+    if (typeof ref === "function") {
+      ref(node);
+    } else if (ref && typeof ref === "object") {
+      ref.current = node;
+    }
+
+    // Store the assigned ref
+    (node as any).__webjsx_assignedRef = ref;
+  }
+}
+
+/**
+ * Releases a ref from a node.
+ * @param node The DOM node.
+ */
+function releaseRef(node: Node): void {
+  const currentRef = (node as any).__webjsx_assignedRef;
+
+  // Only release if there's an assigned ref
+  if (currentRef) {
+    if (typeof currentRef === "function") {
+      currentRef(null);
+    } else if (currentRef && typeof currentRef === "object") {
+      currentRef.current = null;
+    }
+
+    // Clear the assigned ref
+    delete (node as any).__webjsx_assignedRef;
   }
 }
 
