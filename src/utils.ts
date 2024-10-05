@@ -26,27 +26,40 @@ export function setAttributes(
     )
       continue;
 
-    if (key.startsWith("on") && typeof value === "function") {
-      // Handle event listeners
-      const eventName = key.substring(2).toLowerCase();
-      const existingListener = (el as any).__webjsx_listeners?.[eventName];
-      if (existingListener) {
-        el.removeEventListener(eventName, existingListener);
+    if (el instanceof HTMLElement) {
+      if (key.startsWith("on") && typeof value === "function") {
+        // Handle event listeners
+        const eventName = key.substring(2).toLowerCase();
+        const existingListener = (el as any).__webjsx_listeners?.[eventName];
+        if (existingListener) {
+          el.removeEventListener(eventName, existingListener);
+        }
+        el.addEventListener(eventName, value);
+        (el as any).__webjsx_listeners = {
+          ...((el as any).__webjsx_listeners || {}),
+          [eventName]: value,
+        };
+      } else if (key in el) {
+        // If the property exists on the element, set it as a property
+        (el as any)[key] = value;
+      } else if (typeof value === "string") {
+        // Apply string attributes via setAttribute
+        el.setAttribute(key, value);
+      } else {
+        // Assign non-string values as properties
+        (el as any)[key] = value;
       }
-      el.addEventListener(eventName, value);
-      (el as any).__webjsx_listeners = {
-        ...((el as any).__webjsx_listeners || {}),
-        [eventName]: value,
-      };
-    } else if (key in el) {
-      // If the property exists on the element, set it as a property
-      (el as any)[key] = value;
-    } else if (typeof value === "string") {
-      // Apply string attributes via setAttribute
-      el.setAttribute(key, value);
-    } else {
-      // Assign non-string values as properties
-      (el as any)[key] = value;
+    } 
+    // If not an HTML Element, then prefer attributes.
+    // eg: SVG, MATH
+    else {
+      if (typeof value === "string") {
+        // Apply string attributes via setAttribute
+        el.setAttribute(key, value);
+      } else {
+        // Assign non-string values as properties
+        (el as any)[key] = value;
+      }
     }
   }
 
