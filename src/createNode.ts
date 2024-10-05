@@ -1,7 +1,11 @@
+import { SVG_NAMESPACE } from "./constants.js";
 import { Fragment, VNode } from "./types.js";
 import { setAttributes } from "./utils.js";
 
-export function createDomNode(vnode: VNode): Node {
+export function createNode(
+  vnode: VNode,
+  parentNamespaceURI: string | undefined
+): Node {
   if (
     typeof vnode === "string" ||
     typeof vnode === "number" ||
@@ -12,12 +16,30 @@ export function createDomNode(vnode: VNode): Node {
     const fragment = document.createDocumentFragment();
     if (vnode.props.children) {
       vnode.props.children.forEach((child) => {
-        fragment.appendChild(createDomNode(child));
+        fragment.appendChild(createNode(child, undefined));
       });
     }
     return fragment;
   } else {
-    const el = document.createElement(vnode.type as string);
+    const namespaceURI =
+      vnode.props.xmlns !== undefined
+        ? (vnode.props.xmlns as string)
+        : vnode.type === "svg"
+        ? SVG_NAMESPACE
+        : parentNamespaceURI ?? undefined;
+
+    const el =
+      vnode.props.is !== undefined
+        ? namespaceURI !== undefined
+          ? document.createElementNS(namespaceURI, vnode.type, {
+              is: vnode.props.is,
+            })
+          : document.createElement(vnode.type, {
+              is: vnode.props.is,
+            })
+        : namespaceURI !== undefined
+        ? document.createElementNS(namespaceURI, vnode.type)
+        : document.createElement(vnode.type);
 
     if (vnode.props) {
       setAttributes(el, vnode.props);
@@ -34,7 +56,7 @@ export function createDomNode(vnode: VNode): Node {
 
     if (vnode.props.children && !vnode.props.dangerouslySetInnerHTML) {
       vnode.props.children.forEach((child) => {
-        el.appendChild(createDomNode(child));
+        el.appendChild(createNode(child, namespaceURI));
       });
     }
 

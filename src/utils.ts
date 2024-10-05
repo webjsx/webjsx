@@ -9,7 +9,7 @@ import { VNode, Fragment } from "./types.js";
  * @param props - The new properties to apply.
  */
 export function setAttributes(
-  el: HTMLElement,
+  el: Element,
   props: { [key: string]: any }
 ): void {
   let isRenderingSuspended = false;

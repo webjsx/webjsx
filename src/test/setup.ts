@@ -17,6 +17,7 @@ const { window } = dom;
 (global as any).navigator = {
   userAgent: "node.js",
 };
+(global as any).Element = window.Element;
 (global as any).HTMLElement = window.HTMLElement;
 (global as any).Node = window.Node;
 (global as any).customElements = window.customElements;
