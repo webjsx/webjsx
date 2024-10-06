@@ -2,10 +2,7 @@ import { SVG_NAMESPACE } from "./constants.js";
 import { Fragment, VNode } from "./types.js";
 import { setAttributes } from "./utils.js";
 
-export function createNode(
-  vnode: VNode,
-  parentNamespaceURI: string | undefined
-): Node {
+export function createNode(vnode: VNode, parentNamespaceURI?: string): Node {
   if (
     typeof vnode === "string" ||
     typeof vnode === "number" ||
