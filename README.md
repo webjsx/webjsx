@@ -373,7 +373,7 @@ You can load modules directly on the web page these days:
   <head>
     <title>WebJsx Test</title>
 
-  <!-- node_modules or wherever you copy webjsx files -->
+  <!-- node_modules or wherever you downloaded webjsx -->
     <script type="importmap">
       {
         "imports": {
