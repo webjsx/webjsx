@@ -1,3 +1,5 @@
+// File path: ./src/index.tsx
+
 import "../../index.ts";
 
 declare module "../../index.js" {
@@ -27,17 +29,14 @@ declare module "../../index.js" {
         title?: string;
         children?: any;
       };
-      "named-slot-element": {
-        children?: any;
-      };
+      "named-slot-element": {};
       "my-custom-slot-element": {
         children?: any;
       };
       "my-dynamic-slot-element": {
         children?: any;
       };
-      "slot": {
-        name?: string;
+      "multi-slot-element": {
         children?: any;
       };
     }
