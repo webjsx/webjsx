@@ -27,7 +27,19 @@ declare module "../../index.js" {
         title?: string;
         children?: any;
       };
-      "named-slot-element": {};
+      "named-slot-element": {
+        children?: any;
+      };
+      "my-custom-slot-element": {
+        children?: any;
+      };
+      "my-dynamic-slot-element": {
+        children?: any;
+      };
+      "slot": {
+        name?: string;
+        children?: any;
+      };
     }
   }
 }

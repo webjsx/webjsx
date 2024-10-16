@@ -17,7 +17,8 @@ describe("JSX Syntax - Web Components with Slots", () => {
     container = document.getElementById("app") as HTMLElement;
   });
 
-  it("should render content inside a default slot", () => {
+  // String-based slot content (shadow DOM usage)
+  it("should render content inside a default slot defined in shadow DOM", () => {
     class MySlotElement extends HTMLElement {
       constructor() {
         super();
@@ -53,7 +54,8 @@ describe("JSX Syntax - Web Components with Slots", () => {
     expect(mySlotElement?.innerHTML).to.contain("Slotted Content");
   });
 
-  it("should update slot content when JSX changes", () => {
+  // String-based slot content update (shadow DOM usage)
+  it("should update slot content in shadow DOM when JSX changes", () => {
     class MySlotElement extends HTMLElement {
       constructor() {
         super();
@@ -97,7 +99,8 @@ describe("JSX Syntax - Web Components with Slots", () => {
     expect(mySlotElement?.innerHTML).to.contain("Updated Slotted Content");
   });
 
-  it("should handle named slots and distribute content correctly", () => {
+  // String-based named slots (shadow DOM usage)
+  it("should handle named slots and distribute content in shadow DOM", () => {
     class NamedSlotElement extends HTMLElement {
       constructor() {
         super();
@@ -133,19 +136,105 @@ describe("JSX Syntax - Web Components with Slots", () => {
     // Check that the header content is assigned to the header slot
     const headerSlot =
       namedSlotElement?.shadowRoot?.querySelector("header slot");
-    expect((headerSlot as HTMLSlotElement)?.assignedNodes()?.[0].textContent).to.equal(
-      "Header Content"
-    );
+    expect(
+      (headerSlot as HTMLSlotElement)?.assignedNodes()?.[0].textContent
+    ).to.equal("Header Content");
 
     // Check that the main content is assigned to the default slot
     const mainSlot = namedSlotElement?.shadowRoot?.querySelector("main slot");
-    expect((mainSlot as HTMLSlotElement)?.assignedNodes()?.[0].textContent).to.equal("Main Content");
+    expect(
+      (mainSlot as HTMLSlotElement)?.assignedNodes()?.[0].textContent
+    ).to.equal("Main Content");
 
     // Check that the footer content is assigned to the footer slot
     const footerSlot =
       namedSlotElement?.shadowRoot?.querySelector("footer slot");
-    expect((footerSlot as HTMLSlotElement)?.assignedNodes()?.[0].textContent).to.equal(
-      "Footer Content"
+    expect(
+      (footerSlot as HTMLSlotElement)?.assignedNodes()?.[0].textContent
+    ).to.equal("Footer Content");
+  });
+
+  // JSX-based default slot usage
+  it("should handle default slot in custom elements using JSX-defined slots", () => {
+    const vdom = (
+      <my-slot-element>
+        <slot>
+          <p>Content inside slot</p>
+        </slot>
+      </my-slot-element>
     );
+
+    applyDiff(container, vdom);
+
+    const slotElement = container.querySelector("my-slot-element slot");
+    expect(slotElement).to.exist;
+    expect(slotElement?.parentElement?.innerHTML).to.contain(
+      "Content inside slot"
+    );
+  });
+
+  // JSX-based named slots usage
+  it("should handle named slots in custom elements using JSX-defined slots", () => {
+    const vdom = (
+      <named-slot-element>
+        <slot name="header">
+          <p>Header Content</p>
+        </slot>
+        <slot>
+          <p>Main Content</p>
+        </slot>
+        <slot name="footer">
+          <p>Footer Content</p>
+        </slot>
+      </named-slot-element>
+    );
+
+    applyDiff(container, vdom);
+
+    const headerSlot = container.querySelector(
+      "named-slot-element slot[name='header']"
+    );
+    const mainSlot = container.querySelector(
+      "named-slot-element slot:not([name])"
+    );
+    const footerSlot = container.querySelector(
+      "named-slot-element slot[name='footer']"
+    );
+
+    expect(headerSlot).to.exist;
+    expect(headerSlot?.innerHTML).to.contain("Header Content");
+
+    expect(mainSlot).to.exist;
+    expect(mainSlot?.innerHTML).to.contain("Main Content");
+
+    expect(footerSlot).to.exist;
+    expect(footerSlot?.innerHTML).to.contain("Footer Content");
+  });
+
+  // JSX-based slots update
+  it("should update slots correctly when JSX-defined slots are updated", () => {
+    const initialVdom = (
+      <my-slot-element>
+        <slot>
+          <p>Initial Slot Content</p>
+        </slot>
+      </my-slot-element>
+    );
+
+    applyDiff(container, initialVdom);
+    const slotElement = container.querySelector("my-slot-element slot");
+    expect(slotElement?.innerHTML).to.contain("Initial Slot Content");
+
+    // Updated render
+    const updatedVdom = (
+      <my-slot-element>
+        <slot>
+          <p>Updated Slot Content</p>
+        </slot>
+      </my-slot-element>
+    );
+
+    applyDiff(container, updatedVdom);
+    expect(slotElement?.innerHTML).to.contain("Updated Slot Content");
   });
 });
