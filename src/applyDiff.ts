@@ -218,26 +218,6 @@ function assignRef(node: Node, ref: any): void {
 }
 
 /**
- * Releases a ref from a node.
- * @param node The DOM node.
- */
-function releaseRef(node: Node): void {
-  const currentRef = (node as any).__webjsx_assignedRef;
-
-  // Only release if there's an assigned ref
-  if (currentRef) {
-    if (typeof currentRef === "function") {
-      currentRef(null);
-    } else if (currentRef && typeof currentRef === "object") {
-      currentRef.current = null;
-    }
-
-    // Clear the assigned ref
-    delete (node as any).__webjsx_assignedRef;
-  }
-}
-
-/**
  * Type guard to check if a VNode is a VElement.
  * @param vnode The virtual node to check.
  * @returns True if vnode is a VElement, false otherwise.
